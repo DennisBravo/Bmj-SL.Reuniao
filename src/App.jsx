@@ -25,6 +25,15 @@ function buildTimeSlots() {
 
 const TIME_SLOTS = buildTimeSlots()
 
+/** Desloca a logo para a esquerda (px). Negativo = esquerda. ~113px ≈ 3cm em ecrã típico. */
+const HEADER_LOGO_SHIFT_X_PX = -266
+
+function formatShortDateBR(iso) {
+  if (!iso) return ''
+  const d = new Date(`${iso}T12:00:00`)
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })
+}
+
 /** Intervalos [start, end) em minutos do mesmo dia — conflito se houver sobreposição */
 function intervalsOverlap(aStart, aEnd, bStart, bEnd) {
   return aStart < bEnd && bStart < aEnd
@@ -175,38 +184,50 @@ export default function App() {
   return (
     <div className="app">
       <header className="app__header">
-        <div className="app__header-logo-row">
-          <BmjLogo />
-        </div>
-        <div className="app__header-main">
-          <div className="app__brand">
-            <h1>Reserva de salas de reunião</h1>
-            <p className="app__subtitle">
-              Visualize disponibilidade, crie reservas e evite conflitos de horário nas 15 salas.
-            </p>
+        <div
+          className={`app__header-row${activeTab === 'painel' ? ' app__header-row--painel' : ''}`}
+        >
+          <div
+            className="app__header-logo app__header-grid-logo"
+            style={{ transform: `translateX(${HEADER_LOGO_SHIFT_X_PX}px)` }}
+          >
+            <BmjLogo />
           </div>
-          <div className="app__header-actions">
-          <nav className="app__tabs" aria-label="Navegação principal">
-            <button
-              type="button"
-              className={`app__tab ${activeTab === 'reservas' ? 'app__tab--active' : ''}`}
-              aria-current={activeTab === 'reservas' ? 'page' : undefined}
-              onClick={() => setActiveTab('reservas')}
-            >
-              Reservas
-            </button>
-            <button
-              type="button"
-              className={`app__tab ${activeTab === 'painel' ? 'app__tab--active' : ''}`}
-              aria-current={activeTab === 'painel' ? 'page' : undefined}
-              onClick={() => setActiveTab('painel')}
-            >
-              Painel
-            </button>
-          </nav>
+          <div className="app__header-top-right app__header-grid-nav">
+            <nav className="app__tabs" aria-label="Navegação principal">
+              <button
+                type="button"
+                className={`app__tab ${activeTab === 'reservas' ? 'app__tab--active' : ''}`}
+                aria-current={activeTab === 'reservas' ? 'page' : undefined}
+                onClick={() => setActiveTab('reservas')}
+              >
+                Reservas
+              </button>
+              <button
+                type="button"
+                className={`app__tab ${activeTab === 'painel' ? 'app__tab--active' : ''}`}
+                aria-current={activeTab === 'painel' ? 'page' : undefined}
+                onClick={() => setActiveTab('painel')}
+              >
+                Painel
+              </button>
+            </nav>
+            <div className="app__user-chip" title="Posto de utilização">
+              <span className="app__user-chip-label">Recepção</span>
+              <span className="app__user-chip-chevron" aria-hidden>
+                ▾
+              </span>
+            </div>
+          </div>
+
+          <h1
+            className={`app__title app__header-grid-title${activeTab === 'painel' ? ' app__header-grid-title--full' : ''}`}
+          >
+            {activeTab === 'reservas' ? 'Reserva de salas' : 'Painel de reservas'}
+          </h1>
           {activeTab === 'reservas' ? (
-            <div className="app__date">
-              <label htmlFor="dia">Dia da grade e da lista</label>
+            <div className="app__date app__date--title-row app__header-grid-date">
+              <label htmlFor="dia">Data</label>
               <input
                 id="dia"
                 type="date"
@@ -215,7 +236,12 @@ export default function App() {
               />
             </div>
           ) : null}
-          </div>
+
+          <p className="app__subtitle app__header-grid-subtitle">
+            {activeTab === 'reservas'
+              ? 'Faça sua reserva e evite conflitos de horário nas salas.'
+              : 'Indicadores e relatório do período selecionado.'}
+          </p>
         </div>
       </header>
 
@@ -228,7 +254,7 @@ export default function App() {
             <div className="legend">
               <span className="legend__item">
                 <span className="legend__swatch legend__swatch--free" aria-hidden />
-                Livre
+                Disponível
               </span>
               <span className="legend__item">
                 <span className="legend__swatch legend__swatch--busy" aria-hidden />
@@ -262,9 +288,9 @@ export default function App() {
                           <td key={slot.startMin}>
                             <div
                               className={`slot ${busy ? 'slot--busy' : 'slot--free'}`}
-                              title={`${sala} · ${slot.label}–${minutesToTime(slot.endMin)} · ${busy ? 'Ocupado' : 'Livre'}`}
+                              title={`${sala} · ${slot.label}–${minutesToTime(slot.endMin)} · ${busy ? 'Ocupado' : 'Disponível'}`}
                               role="img"
-                              aria-label={`${sala}, ${slot.label}, ${busy ? 'ocupado' : 'livre'}`}
+                              aria-label={`${sala}, ${slot.label}, ${busy ? 'ocupado' : 'disponível'}`}
                             />
                           </td>
                         )
@@ -382,14 +408,16 @@ export default function App() {
                   />
                 </div>
 
-                <button type="submit" className="btn">
-                  Confirmar reserva
-                </button>
+                <div className="form__actions">
+                  <button type="submit" className="btn">
+                    Confirmar reserva
+                  </button>
+                </div>
               </form>
             </section>
 
             <section className="panel list-panel">
-              <h3>Reservas do dia ({selectedDate})</h3>
+              <h3>Reservas do dia ({formatShortDateBR(selectedDate)})</h3>
               {sortedDayList.length === 0 ? (
                 <p className="empty-state">Nenhuma reserva para esta data.</p>
               ) : (
@@ -401,7 +429,7 @@ export default function App() {
                       </div>
                       <div className="reservation-card__title">{r.titulo}</div>
                       <div className="reservation-card__meta">
-                        Solicitante: {r.solicitante}
+                        Responsável: {r.solicitante}
                         {r.emailSolicitante ? (
                           <>
                             <br />

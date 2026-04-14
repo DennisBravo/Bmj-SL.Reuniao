@@ -1,24 +1,27 @@
 /**
- * Logo BMJ — usa o ficheiro oficial em public/ (pixel-perfect).
+ * Logo BMJ — ficheiro em public/ (versão para fundo claro: texto/ícone escuros).
  *
- * 1. Coloca a tua marca em: public/bmj-logo.png (recomendado, fundo transparente)
- * 2. Alternativa vetorial: public/bmj-logo.svg (export oficial)
- *
- * Se o PNG não existir, tenta carregar o SVG.
+ * Coloque a marca em: public/bmj-logo.png (recomendado)
+ * Reserva: public/bmj-logo.svg
  */
+const LOGO_PNG = '/bmj-logo.png'
+const LOGO_SVG = '/bmj-logo.svg'
+
 export default function BmjLogo() {
   return (
     <div className="bmj-logo">
       <img
         className="bmj-logo__img"
-        src="/bmj-logo.png"
+        src={LOGO_PNG}
         alt="BMJ Consultores Associados"
         decoding="async"
+        loading="eager"
+        fetchPriority="high"
         onError={(e) => {
           const el = e.currentTarget
-          if (el.src.endsWith('/bmj-logo.png')) {
+          if (el.src.endsWith(LOGO_PNG)) {
             el.onerror = null
-            el.src = '/bmj-logo.svg'
+            el.src = LOGO_SVG
           }
         }}
       />

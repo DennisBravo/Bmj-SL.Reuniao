@@ -141,13 +141,13 @@ export default function Painel({ reservations }) {
   <title>BMJ — Reservas ${escapeHtml(periodBounds.start)}_${escapeHtml(periodBounds.end)}</title>
   <style>
     @page { size: landscape; margin: 12mm; }
-    body { font-family: Segoe UI, system-ui, sans-serif; color: #111; padding: 8px; font-size: 10px; }
-    h1 { font-size: 16px; color: #1b2333; margin: 0 0 6px; }
-    .meta { color: #444; margin-bottom: 14px; font-size: 11px; }
+    body { font-family: Inter, Segoe UI, system-ui, sans-serif; color: #1c2434; padding: 8px; font-size: 10px; }
+    h1 { font-size: 16px; color: #1c2434; margin: 0 0 6px; font-weight: 600; }
+    .meta { color: #5c6578; margin-bottom: 14px; font-size: 11px; }
     table { border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid #333; padding: 5px 6px; text-align: left; vertical-align: top; }
-    th { background: #1b2333; color: #fff; font-weight: 600; }
-    tr:nth-child(even) td { background: #f6f6f6; }
+    th, td { border: 1px solid #e8eaef; padding: 6px 8px; text-align: left; vertical-align: top; }
+    th { background: #1c2434; color: #fff; font-weight: 600; }
+    tr:nth-child(even) td { background: #f5f6f8; }
   </style>
 </head>
 <body>
