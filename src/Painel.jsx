@@ -6,8 +6,9 @@ import {
   todayISO,
   getPeriodRange,
   daysInclusive,
-  dateInClosedRange,
-  reservationDurationMinutes,
+  reservationMinutesInPeriod,
+  reservationOverlapsRange,
+  reservationCoversDate,
   nowMinutesLocal,
   timeToMinutes,
 } from './reservasUtils'
@@ -39,7 +40,7 @@ export default function Painel({ reservations }) {
   const inPeriod = useMemo(
     () =>
       reservations.filter((r) =>
-        dateInClosedRange(r.date, periodBounds.start, periodBounds.end),
+        reservationOverlapsRange(r, periodBounds.start, periodBounds.end),
       ),
     [reservations, periodBounds],
   )
@@ -48,7 +49,7 @@ export default function Painel({ reservations }) {
 
   const totalHoje = useMemo(() => {
     const d = todayISO()
-    return reservations.filter((r) => r.date === d).length
+    return reservations.filter((r) => reservationCoversDate(r, d)).length
   }, [reservations])
 
   const salasOcupadasAgora = useMemo(() => {
@@ -56,7 +57,7 @@ export default function Painel({ reservations }) {
     const nowM = nowMinutesLocal()
     const set = new Set()
     for (const r of reservations) {
-      if (r.date !== d) continue
+      if (!reservationCoversDate(r, d)) continue
       const a = timeToMinutes(r.horaInicio)
       const b = timeToMinutes(r.horaFim)
       if (Number.isNaN(a) || Number.isNaN(b)) continue
@@ -71,24 +72,26 @@ export default function Painel({ reservations }) {
     const capTotal = SALAS.length * numDaysInPeriod * windowMinutes
     let used = 0
     for (const r of inPeriod) {
-      used += reservationDurationMinutes(r)
+      used += reservationMinutesInPeriod(r, periodBounds.start, periodBounds.end)
     }
     if (capTotal <= 0) return 0
     return Math.min(100, Math.round((used / capTotal) * 1000) / 10)
-  }, [inPeriod, numDaysInPeriod, windowMinutes])
+  }, [inPeriod, numDaysInPeriod, windowMinutes, periodBounds])
 
   const ocupacaoPorSala = useMemo(() => {
     const maxPerRoom = numDaysInPeriod * windowMinutes
     const used = Object.fromEntries(SALAS.map((s) => [s, 0]))
     for (const r of inPeriod) {
-      if (used[r.sala] !== undefined) used[r.sala] += reservationDurationMinutes(r)
+      if (used[r.sala] !== undefined) {
+        used[r.sala] += reservationMinutesInPeriod(r, periodBounds.start, periodBounds.end)
+      }
     }
     return SALAS.map((sala) => ({
       sala,
       minutes: used[sala],
       pct: maxPerRoom > 0 ? Math.min(100, (used[sala] / maxPerRoom) * 100) : 0,
     }))
-  }, [inPeriod, numDaysInPeriod, windowMinutes])
+  }, [inPeriod, numDaysInPeriod, windowMinutes, periodBounds])
 
   const tableRows = useMemo(() => {
     let list = inPeriod
@@ -101,8 +104,11 @@ export default function Painel({ reservations }) {
         return sol.includes(q) || em.includes(q)
       })
     }
-    if (filterDataDe) list = list.filter((r) => r.date >= filterDataDe)
-    if (filterDataAte) list = list.filter((r) => r.date <= filterDataAte)
+    if (filterDataDe || filterDataAte) {
+      const de = filterDataDe || '1970-01-01'
+      const ate = filterDataAte || '9999-12-31'
+      list = list.filter((r) => reservationOverlapsRange(r, de, ate))
+    }
     return [...list].sort((a, b) => {
       if (a.date !== b.date) return a.date.localeCompare(b.date)
       return timeToMinutes(a.horaInicio) - timeToMinutes(b.horaInicio)
@@ -116,13 +122,16 @@ export default function Painel({ reservations }) {
         ? periodBounds.start
         : `${periodBounds.start} a ${periodBounds.end}`
 
+    const periodoCell = (r) =>
+      r.dateFim && r.dateFim !== r.date ? `${r.date} → ${r.dateFim}` : r.date
+
     const tbody =
       tableRows.length === 0
-        ? '<tr><td colspan="8" style="text-align:center;padding:16px;font-style:italic">Nenhuma reserva com os filtros atuais.</td></tr>'
+        ? '<tr><td colspan="9" style="text-align:center;padding:16px;font-style:italic">Nenhuma reserva com os filtros atuais.</td></tr>'
         : tableRows
             .map(
               (r) => `<tr>
-            <td>${escapeHtml(r.date)}</td>
+            <td>${escapeHtml(periodoCell(r))}</td>
             <td>${escapeHtml(r.sala)}</td>
             <td>${escapeHtml(r.horaInicio)}</td>
             <td>${escapeHtml(r.horaFim)}</td>
@@ -130,6 +139,7 @@ export default function Painel({ reservations }) {
             <td>${escapeHtml(r.solicitante)}</td>
             <td>${escapeHtml(r.emailSolicitante || '—')}</td>
             <td>${escapeHtml((r.participantes || '').replace(/\r?\n/g, ' · '))}</td>
+            <td>Ativa</td>
           </tr>`,
             )
             .join('')
@@ -155,7 +165,7 @@ export default function Painel({ reservations }) {
   <p class="meta">Período: ${escapeHtml(periodStr)} · ${tableRows.length} registro(s) · Gerado em ${escapeHtml(new Date().toLocaleString('pt-BR'))}</p>
   <table>
     <thead><tr>
-      <th>Data</th><th>Sala</th><th>Início</th><th>Fim</th><th>Título</th><th>Solicitante</th><th>E-mail</th><th>Participantes</th>
+      <th>Período (datas)</th><th>Sala</th><th>Início</th><th>Fim</th><th>Título</th><th>Solicitante</th><th>E-mail</th><th>Participantes</th><th>Status</th>
     </tr></thead>
     <tbody>${tbody}</tbody>
   </table>
@@ -313,32 +323,38 @@ export default function Painel({ reservations }) {
           <table className="report-table">
             <thead>
               <tr>
-                <th>Data</th>
+                <th>Período</th>
                 <th>Sala</th>
                 <th>Início</th>
                 <th>Fim</th>
                 <th>Título</th>
                 <th>Solicitante</th>
                 <th>E-mail</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
               {tableRows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="report-table__empty">
+                  <td colSpan={8} className="report-table__empty">
                     Nenhuma reserva com os filtros atuais.
                   </td>
                 </tr>
               ) : (
                 tableRows.map((r) => (
                   <tr key={r.id}>
-                    <td>{r.date}</td>
+                    <td>
+                      {r.dateFim && r.dateFim !== r.date
+                        ? `${r.date} → ${r.dateFim}`
+                        : r.date}
+                    </td>
                     <td className="report-table__sala">{r.sala}</td>
                     <td>{r.horaInicio}</td>
                     <td>{r.horaFim}</td>
                     <td>{r.titulo}</td>
                     <td>{r.solicitante}</td>
                     <td className="report-table__email">{r.emailSolicitante || '—'}</td>
+                    <td>Ativa</td>
                   </tr>
                 ))
               )}

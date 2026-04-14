@@ -125,3 +125,78 @@ export function loadReservations() {
 export function saveReservations(list) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
 }
+
+export const AUDIT_STORAGE_KEY = 'bmj-salareuniao-audit-v1'
+
+/** Reserva cobre o dia local YYYY-MM-DD (inclui intervalo date…dateFim). */
+export function reservationCoversDate(r, dateISO) {
+  const end = r.dateFim || r.date
+  return dateISO >= r.date && dateISO <= end
+}
+
+/** Lista de ISO dates de start a end inclusive (ordem crescente). */
+export function eachDateISOInRange(startISO, endISO) {
+  const out = []
+  const d = new Date(`${startISO}T12:00:00`)
+  const last = new Date(`${endISO}T12:00:00`)
+  while (d <= last) {
+    out.push(toISODateLocal(d))
+    d.setDate(d.getDate() + 1)
+  }
+  return out
+}
+
+/** Segunda-feira da semana que contém dateISO (local). */
+export function mondayOfWeekContaining(dateISO) {
+  const d = new Date(`${dateISO}T12:00:00`)
+  const dow = d.getDay()
+  const mondayOffset = dow === 0 ? -6 : 1 - dow
+  d.setDate(d.getDate() + mondayOffset)
+  return toISODateLocal(d)
+}
+
+/** Seg, Ter, … Dom como ISO a partir da segunda da semana. */
+export function weekDayISOsFromMonday(mondayISO) {
+  const d = new Date(`${mondayISO}T12:00:00`)
+  return Array.from({ length: 7 }, (_, i) => {
+    const x = new Date(d)
+    x.setDate(d.getDate() + i)
+    return toISODateLocal(x)
+  })
+}
+
+export function appendAudit(entry) {
+  try {
+    const raw = localStorage.getItem(AUDIT_STORAGE_KEY)
+    let prev = []
+    try {
+      const p = JSON.parse(raw || '[]')
+      if (Array.isArray(p)) prev = p
+    } catch {
+      prev = []
+    }
+    prev.push(entry)
+    localStorage.setItem(AUDIT_STORAGE_KEY, JSON.stringify(prev.slice(-500)))
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Reserva intersecta [startISO, endISO] em qualquer dia. */
+export function reservationOverlapsRange(r, startISO, endISO) {
+  const rs = r.date
+  const re = r.dateFim || r.date
+  return !(re < startISO || rs > endISO)
+}
+
+/** Minutos “consumidos” no período (duração diária × dias de interseção). */
+export function reservationMinutesInPeriod(r, periodStart, periodEnd) {
+  const rs = r.date
+  const re = r.dateFim || r.date
+  const overlapStart = rs > periodStart ? rs : periodStart
+  const overlapEnd = re < periodEnd ? re : periodEnd
+  if (overlapStart > overlapEnd) return 0
+  const n = eachDateISOInRange(overlapStart, overlapEnd).length
+  const dm = reservationDurationMinutes(r)
+  return n * dm
+}

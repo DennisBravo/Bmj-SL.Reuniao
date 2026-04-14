@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import Painel from './Painel.jsx'
 import {
   SALAS,
@@ -9,10 +10,12 @@ import {
   minutesToTime,
   isValidEmail,
   todayISO,
-  loadReservations,
-  saveReservations,
+  eachDateISOInRange,
+  reservationCoversDate,
 } from './reservasUtils'
+import { useReservas } from './ReservasContext.jsx'
 import BmjLogo from './components/BmjLogo.jsx'
+import CancelarReservaModal from './components/CancelarReservaModal.jsx'
 import './App.css'
 
 function buildTimeSlots() {
@@ -59,15 +62,25 @@ function findConflict(sala, date, startMin, endMin, reservations, excludeId) {
   return null
 }
 
+function findConflictRange(sala, startISO, endISO, startMin, endMin, reservations, excludeId) {
+  for (const d of eachDateISOInRange(startISO, endISO)) {
+    const c = findConflict(sala, d, startMin, endMin, reservations, excludeId)
+    if (c) return `${c} (em ${d})`
+  }
+  return null
+}
+
 export default function App() {
+  const navigate = useNavigate()
+  const { reservations, setReservations, cancelReservationWithAudit } = useReservas()
   const [activeTab, setActiveTab] = useState('reservas')
   const [selectedDate, setSelectedDate] = useState(() => todayISO())
-  const [reservations, setReservations] = useState(loadReservations)
 
   const [form, setForm] = useState({
     sala: SALAS[0],
     horaInicio: '09:00',
     horaFim: '10:00',
+    dataFim: '',
     titulo: '',
     solicitante: '',
     emailSolicitante: '',
@@ -77,11 +90,8 @@ export default function App() {
   const [rececaoMenuOpen, setRececaoMenuOpen] = useState(false)
   const [desmarcarModalOpen, setDesmarcarModalOpen] = useState(false)
   const [desmarcarModalDate, setDesmarcarModalDate] = useState(() => selectedDate)
+  const [cancelTarget, setCancelTarget] = useState(null)
   const rececaoWrapRef = useRef(null)
-
-  useEffect(() => {
-    saveReservations(reservations)
-  }, [reservations])
 
   useEffect(() => {
     function onPointerDown(e) {
@@ -93,6 +103,7 @@ export default function App() {
       if (e.key === 'Escape') {
         setRececaoMenuOpen(false)
         setDesmarcarModalOpen(false)
+        setCancelTarget(null)
       }
     }
     document.addEventListener('mousedown', onPointerDown)
@@ -104,7 +115,7 @@ export default function App() {
   }, [])
 
   const reservationsForDay = useMemo(
-    () => reservations.filter((r) => r.date === selectedDate),
+    () => reservations.filter((r) => reservationCoversDate(r, selectedDate)),
     [reservations, selectedDate],
   )
 
@@ -116,7 +127,7 @@ export default function App() {
 
   const desmarcarList = useMemo(() => {
     return reservations
-      .filter((r) => r.date === desmarcarModalDate)
+      .filter((r) => reservationCoversDate(r, desmarcarModalDate))
       .sort((a, b) => timeToMinutes(a.horaInicio) - timeToMinutes(b.horaInicio))
   }, [reservations, desmarcarModalDate])
 
@@ -174,9 +185,16 @@ export default function App() {
       return
     }
 
-    const conflict = findConflict(
+    const dataFim = (form.dataFim || '').trim() || selectedDate
+    if (dataFim < selectedDate) {
+      setFormError('A data fim não pode ser anterior à data de início.')
+      return
+    }
+
+    const conflict = findConflictRange(
       form.sala,
       selectedDate,
+      dataFim,
       startMin,
       endMin,
       reservations,
@@ -191,6 +209,7 @@ export default function App() {
       id: crypto.randomUUID(),
       sala: form.sala,
       date: selectedDate,
+      ...(dataFim !== selectedDate ? { dateFim: dataFim } : {}),
       horaInicio: form.horaInicio,
       horaFim: form.horaFim,
       titulo,
@@ -207,23 +226,10 @@ export default function App() {
     }))
   }
 
-  function removeReservation(id) {
-    setReservations((prev) => prev.filter((r) => r.id !== id))
-  }
-
   function openDesmarcarModal() {
     setDesmarcarModalDate(selectedDate)
     setRececaoMenuOpen(false)
     setDesmarcarModalOpen(true)
-  }
-
-  function confirmDesmarcar(r) {
-    const ok = window.confirm(
-      `Desmarcar a reunião “${r.titulo}” (${r.sala}, ${r.horaInicio}–${r.horaFim})?`,
-    )
-    if (ok) {
-      removeReservation(r.id)
-    }
   }
 
   return (
@@ -278,13 +284,71 @@ export default function App() {
                   role="menu"
                   aria-labelledby="rececao-menu-button"
                 >
+                  <Link
+                    className="app__rececao-menu-item"
+                    role="menuitem"
+                    to="/recepcao/mapa-semanal"
+                    onClick={() => setRececaoMenuOpen(false)}
+                  >
+                    Mapa semanal de reservas
+                  </Link>
                   <button
                     type="button"
                     className="app__rececao-menu-item"
                     role="menuitem"
                     onClick={openDesmarcarModal}
                   >
-                    Desmarcar reunião…
+                    Cancelar reserva…
+                  </button>
+                  <button
+                    type="button"
+                    className="app__rececao-menu-item"
+                    role="menuitem"
+                    onClick={() => {
+                      setRececaoMenuOpen(false)
+                      navigate('/recepcao/mapa-semanal?print=1')
+                    }}
+                  >
+                    Relatórios / Exportar PDF…
+                  </button>
+                  <button
+                    type="button"
+                    className="app__rececao-menu-item"
+                    role="menuitem"
+                    onClick={() => {
+                      setRececaoMenuOpen(false)
+                      window.alert(
+                        'Biblioteca de manuais (TV, webcam, Wi-Fi, etc.): previsto na fase 2 — integração SharePoint / PDF.',
+                      )
+                    }}
+                  >
+                    Manuais das salas
+                  </button>
+                  <button
+                    type="button"
+                    className="app__rececao-menu-item"
+                    role="menuitem"
+                    onClick={() => {
+                      setRececaoMenuOpen(false)
+                      window.alert(
+                        'Ficha técnica por sala (capacidade, equipamentos): previsto na fase 2.',
+                      )
+                    }}
+                  >
+                    Informações e suporte da sala
+                  </button>
+                  <button
+                    type="button"
+                    className="app__rececao-menu-item"
+                    role="menuitem"
+                    onClick={() => {
+                      setRececaoMenuOpen(false)
+                      window.alert(
+                        'Controle de acesso (Microsoft Entra ID / perfis Recepção e Admin): previsto na fase 2.',
+                      )
+                    }}
+                  >
+                    Controle de acesso (login)
                   </button>
                 </div>
               ) : null}
@@ -408,6 +472,20 @@ export default function App() {
                   />
                 </div>
 
+                <div className="form__row">
+                  <label htmlFor="dataFim">Último dia (reunião em vários dias)</label>
+                  <input
+                    id="dataFim"
+                    type="date"
+                    min={selectedDate}
+                    value={form.dataFim}
+                    onChange={(e) => updateField('dataFim', e.target.value)}
+                  />
+                  <span className="hint" style={{ marginTop: 6 }}>
+                    Opcional. Deixe vazio para um único dia. O mesmo horário repete em cada dia.
+                  </span>
+                </div>
+
                 <div className="form__row form__row--2">
                   <div className="form__row">
                     <label htmlFor="ini">Hora início</label>
@@ -518,7 +596,7 @@ export default function App() {
                         <button
                           type="button"
                           className="btn-ghost"
-                          onClick={() => removeReservation(r.id)}
+                          onClick={() => setCancelTarget(r)}
                         >
                           Cancelar reserva
                         </button>
@@ -576,7 +654,10 @@ export default function App() {
                     <button
                       type="button"
                       className="btn-ghost btn-ghost--danger"
-                      onClick={() => confirmDesmarcar(r)}
+                      onClick={() => {
+                        setDesmarcarModalOpen(false)
+                        setCancelTarget(r)
+                      }}
                     >
                       Desmarcar
                     </button>
@@ -595,6 +676,14 @@ export default function App() {
             </div>
           </div>
         </div>
+      ) : null}
+
+      {cancelTarget ? (
+        <CancelarReservaModal
+          reservation={cancelTarget}
+          onClose={() => setCancelTarget(null)}
+          onConfirm={(payload) => cancelReservationWithAudit(cancelTarget, payload)}
+        />
       ) : null}
     </div>
   )

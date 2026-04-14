@@ -1116,6 +1116,19 @@
   box-shadow: var(--shadow-soft);
 }
 
+.btn--danger {
+  margin-top: 0;
+  background: var(--danger);
+  color: #fff;
+  border: none;
+}
+
+.btn--danger:hover {
+  background: #943838;
+  color: #fff;
+  box-shadow: var(--shadow-soft);
+}
+
 .painel__filters {
   display: flex;
   flex-wrap: wrap;
@@ -1210,4 +1223,271 @@
   text-align: center;
   color: var(--text-muted);
   padding: 28px 16px !important;
+}
+
+/* Link no submenu Recepção */
+a.app__rececao-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.app__modal-actions--form {
+  margin-top: 8px;
+}
+
+/* ── Mapa semanal (Recepção) ───────────────────────────── */
+.mapa-semanal {
+  padding-top: 24px;
+  max-width: var(--page-max, 1480px);
+  margin: 0 auto;
+  padding-left: var(--page-pad-x, 28px);
+  padding-right: var(--page-pad-x, 28px);
+  padding-bottom: 40px;
+}
+
+.mapa-semanal__header {
+  margin-bottom: 20px;
+}
+
+.mapa-semanal__header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.mapa-semanal__back {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.mapa-semanal__back:hover {
+  text-decoration: underline;
+}
+
+.mapa-semanal__title {
+  margin: 0;
+  font-size: clamp(1.25rem, 2.2vw, 1.5rem);
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.mapa-semanal__lead {
+  margin: 0 0 18px;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  max-width: 72ch;
+}
+
+.mapa-semanal__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px 18px;
+  margin-bottom: 14px;
+}
+
+.mapa-semanal__week-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mapa-semanal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mapa-semanal__field--grow {
+  flex: 1 1 200px;
+  min-width: 180px;
+}
+
+.mapa-semanal__field label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.mapa-semanal__field input {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-size: 0.875rem;
+}
+
+.mapa-semanal__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.mapa-semanal__swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.mapa-semanal__swatch--livre {
+  background: #c8e6c9;
+  box-shadow: inset 0 0 0 1px rgba(46, 125, 90, 0.25);
+}
+
+.mapa-semanal__swatch--parcial {
+  background: #ffe082;
+  box-shadow: inset 0 0 0 1px rgba(180, 130, 0, 0.35);
+}
+
+.mapa-semanal__swatch--ocupada {
+  background: #ef5350;
+  box-shadow: inset 0 0 0 1px rgba(120, 30, 30, 0.35);
+}
+
+.mapa-semanal__table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.mapa-semanal__grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  min-width: 720px;
+}
+
+.mapa-semanal__grid th,
+.mapa-semanal__grid td {
+  border: 1px solid var(--border-muted);
+  padding: 0;
+  vertical-align: middle;
+}
+
+.mapa-semanal__th-sala {
+  background: var(--surface-2);
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-muted);
+  width: 140px;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+.mapa-semanal__th-day {
+  background: var(--surface-2);
+  padding: 8px 6px;
+  text-align: center;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.mapa-semanal__th-dow {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.mapa-semanal__th-date {
+  display: block;
+  font-size: 0.72rem;
+}
+
+.mapa-semanal__row-sala {
+  background: var(--surface-2);
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.72rem;
+  line-height: 1.3;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  max-width: 160px;
+}
+
+.mapa-semanal__td {
+  padding: 4px;
+  background: var(--bg);
+}
+
+.mapa-semanal__cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  transition: transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.mapa-semanal__cell:hover {
+  transform: scale(1.02);
+  box-shadow: var(--shadow-soft);
+}
+
+.mapa-semanal__cell--livre {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.mapa-semanal__cell--parcial {
+  background: #fff8e1;
+  color: #b8860b;
+}
+
+.mapa-semanal__cell--ocupada {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.mapa-semanal__cell-label {
+  padding: 0 4px;
+  text-align: center;
+  line-height: 1.2;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .mapa-semanal {
+    padding: 0;
+    max-width: none;
+  }
+
+  .mapa-semanal__table-wrap {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+
+  .mapa-semanal__cell:hover {
+    transform: none;
+  }
 }
