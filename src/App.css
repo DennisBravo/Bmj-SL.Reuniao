@@ -115,8 +115,9 @@
   margin-top: 2px;
 }
 
-.app__rececao {
-  position: relative;
+.app__rececao-link {
+  text-decoration: none;
+  color: inherit;
 }
 
 .app__user-chip--trigger {
@@ -1287,6 +1288,14 @@ a.app__rececao-menu-item {
   max-width: 72ch;
 }
 
+.mapa-semanal--embedded {
+  padding-top: 0;
+}
+
+.mapa-semanal--embedded .mapa-semanal__header {
+  margin-bottom: 16px;
+}
+
 .mapa-semanal__toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -1470,6 +1479,227 @@ a.app__rececao-menu-item {
   padding: 0 4px;
   text-align: center;
   line-height: 1.2;
+}
+
+/* ── Layout subpágina Recepção ─────────────────────────── */
+.recepcao-layout {
+  display: flex;
+  min-height: 100vh;
+  align-items: stretch;
+  background: var(--bg);
+}
+
+.recepcao-layout__sidebar {
+  flex: 0 0 min(280px, 32vw);
+  max-width: 320px;
+  padding: 24px 18px 32px;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recepcao-layout__back {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+  margin-bottom: 4px;
+}
+
+.recepcao-layout__back:hover {
+  text-decoration: underline;
+}
+
+.recepcao-layout__title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.recepcao-layout__subtitle {
+  margin: 0 0 8px;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.recepcao-layout__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.recepcao-layout__link {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.recepcao-layout__link:hover {
+  background: var(--surface-2);
+}
+
+.recepcao-layout__link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.recepcao-layout__link--active {
+  background: var(--surface-2);
+  border-color: var(--primary);
+  color: var(--text);
+}
+
+.recepcao-layout__main {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.recepcao-page {
+  padding: 24px var(--page-pad-x, 28px) 40px;
+  max-width: var(--page-max, 900px);
+}
+
+.recepcao-page__header {
+  margin-bottom: 20px;
+}
+
+.recepcao-page__heading {
+  margin: 0 0 8px;
+  font-size: clamp(1.2rem, 2vw, 1.45rem);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.recepcao-page__intro {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  max-width: 65ch;
+}
+
+.recepcao-page__body p {
+  margin: 0 0 0.75em;
+}
+
+.recepcao-page__body p:last-child {
+  margin-bottom: 0;
+}
+
+.recepcao-page__panel {
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.recepcao-page__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.recepcao-page__field label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.recepcao-page__field input[type='date'] {
+  max-width: 200px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-size: 0.875rem;
+}
+
+.recepcao-page__empty {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.recepcao-page__list {
+  margin: 0;
+}
+
+.recepcao-page__cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.recepcao-page__card {
+  padding: 18px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.recepcao-page__card h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.recepcao-page__card p {
+  margin: 0 0 14px;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.recepcao-page__card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .recepcao-layout {
+    flex-direction: column;
+  }
+
+  .recepcao-layout__sidebar {
+    flex: none;
+    max-width: none;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .recepcao-layout__nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .recepcao-layout__link {
+    flex: 1 1 auto;
+    min-width: 140px;
+    text-align: center;
+  }
 }
 
 @media print {

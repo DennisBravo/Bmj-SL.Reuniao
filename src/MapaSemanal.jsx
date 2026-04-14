@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useOutletContext, useSearchParams } from 'react-router-dom'
 import {
   SALAS,
   DAY_START_MIN,
@@ -43,6 +43,7 @@ function cellVariant(ratio, list) {
 
 export default function MapaSemanal() {
   const { reservations, cancelReservationWithAudit } = useReservas()
+  const embedded = Boolean(useOutletContext()?.embedded)
   const [searchParams, setSearchParams] = useSearchParams()
   const [weekMonday, setWeekMonday] = useState(() => mondayOfWeekContaining(todayISO()))
   const [salaFilter, setSalaFilter] = useState('')
@@ -91,18 +92,22 @@ export default function MapaSemanal() {
   }
 
   return (
-    <div className="mapa-semanal">
+    <div className={`mapa-semanal${embedded ? ' mapa-semanal--embedded' : ''}`}>
       <header className="mapa-semanal__header no-print">
-        <div className="mapa-semanal__header-row">
-          <Link to="/" className="mapa-semanal__back">
-            ← Voltar às reservas
-          </Link>
-          <h1 className="mapa-semanal__title">Mapa semanal de reservas</h1>
-        </div>
-        <p className="mapa-semanal__lead">
-          Visão por sala e por dia (Seg–Dom). Cores: verde livre, amarelo ocupação parcial, vermelho
-          muito ocupado. Clique numa célula para ver detalhes e cancelar.
-        </p>
+        {!embedded ? (
+          <div className="mapa-semanal__header-row">
+            <Link to="/" className="mapa-semanal__back">
+              ← Voltar às reservas
+            </Link>
+            <h1 className="mapa-semanal__title">Mapa semanal de reservas</h1>
+          </div>
+        ) : null}
+        {!embedded ? (
+          <p className="mapa-semanal__lead">
+            Visão por sala e por dia (Seg–Dom). Cores: verde livre, amarelo ocupação parcial, vermelho
+            muito ocupado. Clique numa célula para ver detalhes e cancelar.
+          </p>
+        ) : null}
 
         <div className="mapa-semanal__toolbar">
           <div className="mapa-semanal__week-nav">

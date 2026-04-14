@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { NavLink } from 'react-router-dom'
 import Painel from './Painel.jsx'
 import {
   SALAS,
@@ -71,7 +71,6 @@ function findConflictRange(sala, startISO, endISO, startMin, endMin, reservation
 }
 
 export default function App() {
-  const navigate = useNavigate()
   const { reservations, setReservations, cancelReservationWithAudit } = useReservas()
   const [activeTab, setActiveTab] = useState('reservas')
   const [selectedDate, setSelectedDate] = useState(() => todayISO())
@@ -87,31 +86,16 @@ export default function App() {
     participantes: '',
   })
   const [formError, setFormError] = useState('')
-  const [rececaoMenuOpen, setRececaoMenuOpen] = useState(false)
-  const [desmarcarModalOpen, setDesmarcarModalOpen] = useState(false)
-  const [desmarcarModalDate, setDesmarcarModalDate] = useState(() => selectedDate)
   const [cancelTarget, setCancelTarget] = useState(null)
-  const rececaoWrapRef = useRef(null)
 
   useEffect(() => {
-    function onPointerDown(e) {
-      if (!rececaoWrapRef.current?.contains(e.target)) {
-        setRececaoMenuOpen(false)
-      }
-    }
     function onKey(e) {
       if (e.key === 'Escape') {
-        setRececaoMenuOpen(false)
-        setDesmarcarModalOpen(false)
         setCancelTarget(null)
       }
     }
-    document.addEventListener('mousedown', onPointerDown)
     document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onPointerDown)
-      document.removeEventListener('keydown', onKey)
-    }
+    return () => document.removeEventListener('keydown', onKey)
   }, [])
 
   const reservationsForDay = useMemo(
@@ -124,12 +108,6 @@ export default function App() {
       (a, b) => timeToMinutes(a.horaInicio) - timeToMinutes(b.horaInicio),
     )
   }, [reservationsForDay])
-
-  const desmarcarList = useMemo(() => {
-    return reservations
-      .filter((r) => reservationCoversDate(r, desmarcarModalDate))
-      .sort((a, b) => timeToMinutes(a.horaInicio) - timeToMinutes(b.horaInicio))
-  }, [reservations, desmarcarModalDate])
 
   const isSlotBusy = useCallback(
     (sala, slotStart, slotEnd) => {
@@ -226,12 +204,6 @@ export default function App() {
     }))
   }
 
-  function openDesmarcarModal() {
-    setDesmarcarModalDate(selectedDate)
-    setRececaoMenuOpen(false)
-    setDesmarcarModalOpen(true)
-  }
-
   return (
     <div className="app">
       <header className="app__header">
@@ -263,96 +235,15 @@ export default function App() {
                 Painel
               </button>
             </nav>
-            <div className="app__rececao" ref={rececaoWrapRef}>
-              <button
-                type="button"
-                className={`app__user-chip app__user-chip--trigger${rececaoMenuOpen ? ' app__user-chip--open' : ''}`}
-                title="Menu do posto — Recepção"
-                aria-expanded={rececaoMenuOpen}
-                aria-haspopup="true"
-                id="rececao-menu-button"
-                onClick={() => setRececaoMenuOpen((o) => !o)}
-              >
-                <span className="app__user-chip-label">Recepção</span>
-                <span className="app__user-chip-chevron" aria-hidden>
-                  ▾
-                </span>
-              </button>
-              {rececaoMenuOpen ? (
-                <div
-                  className="app__rececao-menu"
-                  role="menu"
-                  aria-labelledby="rececao-menu-button"
-                >
-                  <Link
-                    className="app__rececao-menu-item"
-                    role="menuitem"
-                    to="/recepcao/mapa-semanal"
-                    onClick={() => setRececaoMenuOpen(false)}
-                  >
-                    Mapa semanal de reservas
-                  </Link>
-                  <button
-                    type="button"
-                    className="app__rececao-menu-item"
-                    role="menuitem"
-                    onClick={openDesmarcarModal}
-                  >
-                    Cancelar reserva…
-                  </button>
-                  <button
-                    type="button"
-                    className="app__rececao-menu-item"
-                    role="menuitem"
-                    onClick={() => {
-                      setRececaoMenuOpen(false)
-                      navigate('/recepcao/mapa-semanal?print=1')
-                    }}
-                  >
-                    Relatórios / Exportar PDF…
-                  </button>
-                  <button
-                    type="button"
-                    className="app__rececao-menu-item"
-                    role="menuitem"
-                    onClick={() => {
-                      setRececaoMenuOpen(false)
-                      window.alert(
-                        'Biblioteca de manuais (TV, webcam, Wi-Fi, etc.): previsto na fase 2 — integração SharePoint / PDF.',
-                      )
-                    }}
-                  >
-                    Manuais das salas
-                  </button>
-                  <button
-                    type="button"
-                    className="app__rececao-menu-item"
-                    role="menuitem"
-                    onClick={() => {
-                      setRececaoMenuOpen(false)
-                      window.alert(
-                        'Ficha técnica por sala (capacidade, equipamentos): previsto na fase 2.',
-                      )
-                    }}
-                  >
-                    Informações e suporte da sala
-                  </button>
-                  <button
-                    type="button"
-                    className="app__rececao-menu-item"
-                    role="menuitem"
-                    onClick={() => {
-                      setRececaoMenuOpen(false)
-                      window.alert(
-                        'Controle de acesso (Microsoft Entra ID / perfis Recepção e Admin): previsto na fase 2.',
-                      )
-                    }}
-                  >
-                    Controle de acesso (login)
-                  </button>
-                </div>
-              ) : null}
-            </div>
+            <NavLink
+              to="/recepcao"
+              className={({ isActive }) =>
+                `app__user-chip app__rececao-link${isActive ? ' app__user-chip--open' : ''}`
+              }
+              title="Área Recepção — mapa, cancelamentos e relatórios"
+            >
+              <span className="app__user-chip-label">Recepção</span>
+            </NavLink>
           </div>
 
           <h1
@@ -609,74 +500,6 @@ export default function App() {
           </div>
         </div>
       )}
-
-      {desmarcarModalOpen ? (
-        <div
-          className="app__modal-backdrop"
-          role="presentation"
-          onClick={() => setDesmarcarModalOpen(false)}
-        >
-          <div
-            className="app__modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="desmarcar-modal-title"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 id="desmarcar-modal-title" className="app__modal-title">
-              Desmarcar reunião
-            </h2>
-            <p className="app__modal-hint">
-              Escolha o dia e desmarque a reunião. A sala volta a ficar disponível nesse horário.
-            </p>
-            <div className="app__modal-field">
-              <label htmlFor="desmarcar-data">Data</label>
-              <input
-                id="desmarcar-data"
-                type="date"
-                value={desmarcarModalDate}
-                onChange={(e) => setDesmarcarModalDate(e.target.value)}
-              />
-            </div>
-            {desmarcarList.length === 0 ? (
-              <p className="app__modal-empty">Nenhuma reserva nesta data.</p>
-            ) : (
-              <ul className="app__modal-list">
-                {desmarcarList.map((r) => (
-                  <li key={r.id} className="app__modal-list-item">
-                    <div className="app__modal-list-text">
-                      <strong>{r.titulo}</strong>
-                      <span>
-                        {r.horaInicio} – {r.horaFim} · {r.sala}
-                      </span>
-                      <span className="app__modal-list-sub">{r.solicitante}</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="btn-ghost btn-ghost--danger"
-                      onClick={() => {
-                        setDesmarcarModalOpen(false)
-                        setCancelTarget(r)
-                      }}
-                    >
-                      Desmarcar
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <div className="app__modal-actions">
-              <button
-                type="button"
-                className="btn-ghost"
-                onClick={() => setDesmarcarModalOpen(false)}
-              >
-                Fechar
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       {cancelTarget ? (
         <CancelarReservaModal
