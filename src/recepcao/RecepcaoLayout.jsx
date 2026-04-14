@@ -3,7 +3,7 @@ import { NavLink, Outlet, Link } from 'react-router-dom'
 const NAV_ITEMS = [
   { to: 'mapa-semanal', label: 'Mapa semanal de reservas' },
   { to: 'cancelar', label: 'Cancelar reserva' },
-  { to: 'relatorios', label: 'Relatórios / Exportar PDF' },
+  { to: 'relatorios', label: 'Relatórios' },
   { to: 'manuais', label: 'Manuais das salas' },
   { to: 'suporte', label: 'Informações e suporte da sala' },
   { to: 'acesso', label: 'Controle de acesso (login)' },
