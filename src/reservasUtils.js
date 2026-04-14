@@ -111,12 +111,35 @@ export function nowMinutesLocal() {
   return n.getHours() * 60 + n.getMinutes()
 }
 
+/** Reserva ativa (não cancelada por soft-delete). */
+export function isReservationActive(r) {
+  return r && !r.deletedAt
+}
+
+export function migrateReservation(r) {
+  if (!r || typeof r !== 'object') return r
+  const createdAt = r.createdAt || r.criadoEm || new Date().toISOString()
+  const createdByEmail = String(r.createdByEmail || r.emailSolicitante || '')
+    .trim()
+    .toLowerCase()
+  return {
+    ...r,
+    observacoes: r.observacoes != null ? String(r.observacoes) : '',
+    createdByEmail,
+    createdAt,
+    updatedAt: r.updatedAt || createdAt,
+    deletedAt: r.deletedAt || null,
+    deletedByEmail: r.deletedByEmail ? String(r.deletedByEmail).trim().toLowerCase() : null,
+  }
+}
+
 export function loadReservations() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return []
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
+    if (!Array.isArray(parsed)) return []
+    return parsed.map(migrateReservation)
   } catch {
     return []
   }

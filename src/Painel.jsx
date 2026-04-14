@@ -127,7 +127,7 @@ export default function Painel({ reservations }) {
 
     const tbody =
       tableRows.length === 0
-        ? '<tr><td colspan="9" style="text-align:center;padding:16px;font-style:italic">Nenhuma reserva com os filtros atuais.</td></tr>'
+        ? '<tr><td colspan="10" style="text-align:center;padding:16px;font-style:italic">Nenhuma reserva com os filtros atuais.</td></tr>'
         : tableRows
             .map(
               (r) => `<tr>
@@ -139,6 +139,7 @@ export default function Painel({ reservations }) {
             <td>${escapeHtml(r.solicitante)}</td>
             <td>${escapeHtml(r.emailSolicitante || '—')}</td>
             <td>${escapeHtml((r.participantes || '').replace(/\r?\n/g, ' · '))}</td>
+            <td>${escapeHtml((r.observacoes || '').replace(/\r?\n/g, ' · ') || '—')}</td>
             <td>Ativa</td>
           </tr>`,
             )
@@ -165,7 +166,7 @@ export default function Painel({ reservations }) {
   <p class="meta">Período: ${escapeHtml(periodStr)} · ${tableRows.length} registro(s) · Gerado em ${escapeHtml(new Date().toLocaleString('pt-BR'))}</p>
   <table>
     <thead><tr>
-      <th>Período (datas)</th><th>Sala</th><th>Início</th><th>Fim</th><th>Título</th><th>Solicitante</th><th>E-mail</th><th>Participantes</th><th>Status</th>
+      <th>Período (datas)</th><th>Sala</th><th>Início</th><th>Fim</th><th>Título</th><th>Solicitante</th><th>E-mail</th><th>Participantes</th><th>Observações</th><th>Status</th>
     </tr></thead>
     <tbody>${tbody}</tbody>
   </table>
@@ -330,13 +331,14 @@ export default function Painel({ reservations }) {
                 <th>Título</th>
                 <th>Solicitante</th>
                 <th>E-mail</th>
+                <th>Observações</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
               {tableRows.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="report-table__empty">
+                  <td colSpan={9} className="report-table__empty">
                     Nenhuma reserva com os filtros atuais.
                   </td>
                 </tr>
@@ -354,6 +356,9 @@ export default function Painel({ reservations }) {
                     <td>{r.titulo}</td>
                     <td>{r.solicitante}</td>
                     <td className="report-table__email">{r.emailSolicitante || '—'}</td>
+                    <td className="report-table__obs">
+                      {r.observacoes ? r.observacoes.replace(/\r?\n/g, ' ') : '—'}
+                    </td>
                     <td>Ativa</td>
                   </tr>
                 ))

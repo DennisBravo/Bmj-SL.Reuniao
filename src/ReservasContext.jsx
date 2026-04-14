@@ -1,55 +1,86 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { appendAudit, loadReservations, saveReservations } from './reservasUtils'
+import { appendAudit, loadReservations, saveReservations, isReservationActive } from './reservasUtils'
+import { canAlterReservation, normalizeEmail } from './envConfig.js'
 
 const ReservasContext = createContext(null)
 
 export function ReservasProvider({ children }) {
-  const [reservations, setReservations] = useState(loadReservations)
+  const [allReservations, setAllReservations] = useState(loadReservations)
+
+  const reservations = useMemo(
+    () => allReservations.filter(isReservationActive),
+    [allReservations],
+  )
 
   useEffect(() => {
-    saveReservations(reservations)
-  }, [reservations])
+    saveReservations(allReservations)
+  }, [allReservations])
 
-  const removeReservation = useCallback((id) => {
-    setReservations((prev) => prev.filter((r) => r.id !== id))
+  const addReservation = useCallback((nova) => {
+    setAllReservations((prev) => [...prev, nova])
   }, [])
 
-  const cancelReservationWithAudit = useCallback(
-    (r, { reason, reasonDetail, cancelledBy }) => {
-      setReservations((prev) => prev.filter((x) => x.id !== r.id))
-      appendAudit({
-        tipo: 'cancelamento',
-        reservaId: r.id,
-        titulo: r.titulo,
-        sala: r.sala,
-        date: r.date,
-        dateFim: r.dateFim || null,
-        horaInicio: r.horaInicio,
-        horaFim: r.horaFim,
-        solicitante: r.solicitante,
-        motivo: reason,
-        motivoDetalhe: reasonDetail || '',
-        canceladoPor: cancelledBy || 'Recepção',
-        at: new Date().toISOString(),
-      })
-    },
-    [],
-  )
+  const removeReservation = useCallback((id) => {
+    setAllReservations((prev) => prev.filter((r) => r.id !== id))
+  }, [])
+
+  const cancelReservationWithAudit = useCallback((r, { reason, reasonDetail, cancelledBy, cancelledByEmail }) => {
+    if (!canAlterReservation(r)) {
+      return false
+    }
+    const now = new Date().toISOString()
+    const byEmail = normalizeEmail(cancelledByEmail || '')
+    const byLabel = (cancelledBy || '').trim() || 'Recepção'
+
+    setAllReservations((prev) =>
+      prev.map((x) =>
+        x.id === r.id
+          ? {
+              ...x,
+              deletedAt: now,
+              deletedByEmail: byEmail || null,
+              updatedAt: now,
+            }
+          : x,
+      ),
+    )
+
+    appendAudit({
+      tipo: 'cancelamento',
+      reservaId: r.id,
+      titulo: r.titulo,
+      sala: r.sala,
+      date: r.date,
+      dateFim: r.dateFim || null,
+      horaInicio: r.horaInicio,
+      horaFim: r.horaFim,
+      solicitante: r.solicitante,
+      motivo: reason,
+      motivoDetalhe: reasonDetail || '',
+      canceladoPor: byLabel,
+      canceladoPorEmail: byEmail || null,
+      deletedAt: now,
+      deletedByEmail: byEmail || null,
+      at: now,
+    })
+    return true
+  }, [])
 
   const value = useMemo(
     () => ({
       reservations,
-      setReservations,
+      allReservations,
+      addReservation,
+      setReservations: setAllReservations,
       removeReservation,
       cancelReservationWithAudit,
     }),
-    [reservations, removeReservation, cancelReservationWithAudit],
+    [reservations, allReservations, addReservation, removeReservation, cancelReservationWithAudit],
   )
 
   return <ReservasContext.Provider value={value}>{children}</ReservasContext.Provider>
 }
 
-// Hook exposto junto ao provider (padrão comum em apps pequenos).
 /* eslint-disable react-refresh/only-export-components */
 export function useReservas() {
   const ctx = useContext(ReservasContext)

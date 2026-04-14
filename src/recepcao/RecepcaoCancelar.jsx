@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useReservas } from '../ReservasContext.jsx'
 import { timeToMinutes, todayISO, reservationCoversDate } from '../reservasUtils'
+import { canAlterReservation, PERMISSAO_NEGADA_MSG } from '../envConfig.js'
 import CancelarReservaModal from '../components/CancelarReservaModal.jsx'
 
 export default function RecepcaoCancelar() {
@@ -48,13 +49,19 @@ export default function RecepcaoCancelar() {
                   </span>
                   <span className="app__modal-list-sub">{r.solicitante}</span>
                 </div>
-                <button
-                  type="button"
-                  className="btn-ghost btn-ghost--danger"
-                  onClick={() => setCancelTarget(r)}
-                >
-                  Cancelar
-                </button>
+                {canAlterReservation(r) ? (
+                  <button
+                    type="button"
+                    className="btn-ghost btn-ghost--danger"
+                    onClick={() => setCancelTarget(r)}
+                  >
+                    Cancelar
+                  </button>
+                ) : (
+                  <span className="recepcao-page__no-perm" role="status">
+                    {PERMISSAO_NEGADA_MSG}
+                  </span>
+                )}
               </li>
             ))}
           </ul>

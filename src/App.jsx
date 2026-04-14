@@ -15,6 +15,8 @@ import {
 import { useReservas } from './ReservasContext.jsx'
 import BmjLogo from './components/BmjLogo.jsx'
 import CancelarReservaModal from './components/CancelarReservaModal.jsx'
+import { getCurrentUserEmail, normalizeEmail, canAlterReservation, PERMISSAO_NEGADA_MSG } from './envConfig.js'
+import { notifyTeamsNewReservationWithNotes } from './teamsWebhook.js'
 import './App.css'
 
 function buildTimeSlots() {
@@ -70,7 +72,7 @@ function findConflictRange(sala, startISO, endISO, startMin, endMin, reservation
 }
 
 export default function App() {
-  const { reservations, setReservations, cancelReservationWithAudit } = useReservas()
+  const { reservations, addReservation, cancelReservationWithAudit } = useReservas()
   const [selectedDate, setSelectedDate] = useState(() => todayISO())
 
   const [form, setForm] = useState({
@@ -82,6 +84,7 @@ export default function App() {
     solicitante: '',
     emailSolicitante: '',
     participantes: '',
+    observacoes: '',
   })
   const [formError, setFormError] = useState('')
   const [cancelTarget, setCancelTarget] = useState(null)
@@ -181,6 +184,10 @@ export default function App() {
       return
     }
 
+    const now = new Date().toISOString()
+    const createdByEmail =
+      normalizeEmail(getCurrentUserEmail() || emailSolicitante) || normalizeEmail(emailSolicitante)
+    const observacoes = form.observacoes.trim()
     const novo = {
       id: crypto.randomUUID(),
       sala: form.sala,
@@ -192,13 +199,30 @@ export default function App() {
       solicitante,
       emailSolicitante,
       participantes: form.participantes.trim(),
-      criadoEm: new Date().toISOString(),
+      observacoes,
+      criadoEm: now,
+      createdAt: now,
+      updatedAt: now,
+      createdByEmail,
+      deletedAt: null,
+      deletedByEmail: null,
     }
-    setReservations((prev) => [...prev, novo])
+    addReservation(novo)
+    void notifyTeamsNewReservationWithNotes({
+      sala: novo.sala,
+      date: novo.date,
+      dateFim: novo.dateFim,
+      horaInicio: novo.horaInicio,
+      horaFim: novo.horaFim,
+      solicitante: novo.solicitante,
+      participantes: novo.participantes,
+      observacoes: novo.observacoes,
+    })
     setForm((f) => ({
       ...f,
       titulo: '',
       participantes: '',
+      observacoes: '',
     }))
   }
 
@@ -420,6 +444,18 @@ export default function App() {
                   />
                 </div>
 
+                <div className="form__row">
+                  <label htmlFor="observacoes">Observações e necessidades da reunião</label>
+                  <textarea
+                    id="observacoes"
+                    className="form__textarea form__textarea--observacoes"
+                    rows={5}
+                    placeholder="Descreva recursos ou preparações necessárias para a reunião"
+                    value={form.observacoes}
+                    onChange={(e) => updateField('observacoes', e.target.value)}
+                  />
+                </div>
+
                 <div className="form__actions">
                   <button type="submit" className="btn">
                     Confirmar reserva
@@ -454,15 +490,29 @@ export default function App() {
                             Participantes: {r.participantes.replace(/\n/g, ', ')}
                           </>
                         ) : null}
+                        {r.observacoes ? (
+                          <>
+                            <br />
+                            <span className="reservation-card__obs">
+                              Observações: {r.observacoes}
+                            </span>
+                          </>
+                        ) : null}
                       </div>
                       <div className="reservation-card__actions">
-                        <button
-                          type="button"
-                          className="btn-ghost"
-                          onClick={() => setCancelTarget(r)}
-                        >
-                          Cancelar reserva
-                        </button>
+                        {canAlterReservation(r) ? (
+                          <button
+                            type="button"
+                            className="btn-ghost"
+                            onClick={() => setCancelTarget(r)}
+                          >
+                            Cancelar reserva
+                          </button>
+                        ) : (
+                          <p className="reservation-card__no-perm" role="status">
+                            {PERMISSAO_NEGADA_MSG}
+                          </p>
+                        )}
                       </div>
                     </li>
                   ))}

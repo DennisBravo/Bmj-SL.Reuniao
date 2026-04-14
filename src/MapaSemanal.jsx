@@ -10,6 +10,7 @@ import {
   weekDayISOsFromMonday,
   todayISO,
 } from './reservasUtils'
+import { canAlterReservation, PERMISSAO_NEGADA_MSG } from './envConfig.js'
 import { useReservas } from './ReservasContext.jsx'
 import CancelarReservaModal from './components/CancelarReservaModal.jsx'
 import './App.css'
@@ -285,16 +286,22 @@ export default function MapaSemanal() {
                       </span>
                       <span className="app__modal-list-sub">{r.solicitante}</span>
                     </div>
-                    <button
-                      type="button"
-                      className="btn-ghost btn-ghost--danger"
-                      onClick={() => {
-                        setCellModal(null)
-                        setCancelTarget(r)
-                      }}
-                    >
-                      Cancelar
-                    </button>
+                    {canAlterReservation(r) ? (
+                      <button
+                        type="button"
+                        className="btn-ghost btn-ghost--danger"
+                        onClick={() => {
+                          setCellModal(null)
+                          setCancelTarget(r)
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                    ) : (
+                      <span className="app__modal-list-denied" role="status">
+                        {PERMISSAO_NEGADA_MSG}
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>
