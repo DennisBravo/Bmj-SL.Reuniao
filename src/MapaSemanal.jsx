@@ -160,22 +160,23 @@ export default function MapaSemanal() {
                 </button>
               </div>
             </div>
-            <div
+            <ul
               className="mapa-semanal__salas-menu"
-              role="group"
               aria-labelledby="mapa-salas-legend"
             >
               {SALAS.map((sala) => (
-                <label key={sala} className="mapa-semanal__sala-chip">
-                  <input
-                    type="checkbox"
-                    checked={salasMarcadas.has(sala)}
-                    onChange={() => toggleSala(sala)}
-                  />
-                  <span>{sala}</span>
-                </label>
+                <li key={sala} className="mapa-semanal__salas-menu-item">
+                  <label className="mapa-semanal__sala-chip">
+                    <input
+                      type="checkbox"
+                      checked={salasMarcadas.has(sala)}
+                      onChange={() => toggleSala(sala)}
+                    />
+                    <span>{sala}</span>
+                  </label>
+                </li>
               ))}
-            </div>
+            </ul>
             {salasFiltradas.length === 0 ? (
               <p className="mapa-semanal__salas-hint">Marque pelo menos uma sala para ver linhas na grelha.</p>
             ) : null}

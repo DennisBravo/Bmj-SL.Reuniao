@@ -1343,7 +1343,8 @@ a.app__rececao-menu-item {
 
 .mapa-semanal__field--salas {
   align-items: stretch;
-  min-width: min(100%, 320px);
+  flex: 1 1 100%;
+  min-width: min(100%, 360px);
 }
 
 .mapa-semanal__salas-head {
@@ -1374,26 +1375,47 @@ a.app__rececao-menu-item {
 }
 
 .mapa-semanal__salas-menu {
+  list-style: none;
+  margin: 0;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px 12px;
-  max-height: 140px;
+  flex-direction: column;
+  gap: 0;
+  max-height: min(45vh, 360px);
   overflow-y: auto;
-  padding: 10px 12px;
+  padding: 4px 0;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: var(--bg);
 }
 
+.mapa-semanal__salas-menu-item {
+  margin: 0;
+  padding: 0;
+}
+
 .mapa-semanal__sala-chip {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 8px 14px;
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--text);
   cursor: pointer;
   user-select: none;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.12s ease;
+}
+
+.mapa-semanal__salas-menu-item:last-child .mapa-semanal__sala-chip {
+  border-bottom: none;
+}
+
+.mapa-semanal__sala-chip:hover {
+  background: var(--surface-2);
 }
 
 .mapa-semanal__sala-chip input {
