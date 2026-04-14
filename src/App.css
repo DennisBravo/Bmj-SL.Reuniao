@@ -115,6 +115,189 @@
   margin-top: 2px;
 }
 
+.app__rececao {
+  position: relative;
+}
+
+.app__user-chip--trigger {
+  cursor: pointer;
+  font: inherit;
+}
+
+.app__user-chip--trigger:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.app__user-chip--open {
+  border-color: var(--primary);
+  color: var(--text);
+}
+
+.app__rececao-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 50;
+  min-width: 220px;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.app__rececao-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.app__rececao-menu-item:hover {
+  background: var(--surface-2);
+}
+
+.app__rececao-menu-item:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 0;
+}
+
+.app__modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: rgba(28, 36, 52, 0.45);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+.app__modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: min(85vh, 640px);
+  overflow: auto;
+  padding: 22px 24px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.app__modal-title {
+  margin: 0 0 10px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.app__modal-hint {
+  margin: 0 0 18px;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.app__modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.app__modal-field label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.app__modal-field input[type='date'] {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.9375rem;
+}
+
+.app__modal-field input[type='date']:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-dim);
+}
+
+.app__modal-empty {
+  margin: 0 0 18px;
+  padding: 16px;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border-radius: 10px;
+}
+
+.app__modal-list {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.app__modal-list-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-muted);
+  background: var(--bg);
+}
+
+.app__modal-list-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  min-width: 0;
+}
+
+.app__modal-list-text strong {
+  font-size: 0.9375rem;
+  color: var(--text);
+}
+
+.app__modal-list-sub {
+  font-size: 0.8125rem;
+}
+
+.app__modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
 .app__tabs {
   display: inline-flex;
   padding: 0;
@@ -694,6 +877,16 @@
 .btn-ghost:hover {
   color: var(--danger);
   border-color: var(--busy-border);
+}
+
+.btn-ghost--danger {
+  flex-shrink: 0;
+}
+
+.btn-ghost--danger:hover {
+  color: var(--danger);
+  border-color: var(--busy-border);
+  background: var(--busy-dim);
 }
 
 .empty-state {

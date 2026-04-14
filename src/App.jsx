@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Painel from './Painel.jsx'
 import {
   SALAS,
@@ -74,10 +74,34 @@ export default function App() {
     participantes: '',
   })
   const [formError, setFormError] = useState('')
+  const [rececaoMenuOpen, setRececaoMenuOpen] = useState(false)
+  const [desmarcarModalOpen, setDesmarcarModalOpen] = useState(false)
+  const [desmarcarModalDate, setDesmarcarModalDate] = useState(() => selectedDate)
+  const rececaoWrapRef = useRef(null)
 
   useEffect(() => {
     saveReservations(reservations)
   }, [reservations])
+
+  useEffect(() => {
+    function onPointerDown(e) {
+      if (!rececaoWrapRef.current?.contains(e.target)) {
+        setRececaoMenuOpen(false)
+      }
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') {
+        setRececaoMenuOpen(false)
+        setDesmarcarModalOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [])
 
   const reservationsForDay = useMemo(
     () => reservations.filter((r) => r.date === selectedDate),
@@ -89,6 +113,12 @@ export default function App() {
       (a, b) => timeToMinutes(a.horaInicio) - timeToMinutes(b.horaInicio),
     )
   }, [reservationsForDay])
+
+  const desmarcarList = useMemo(() => {
+    return reservations
+      .filter((r) => r.date === desmarcarModalDate)
+      .sort((a, b) => timeToMinutes(a.horaInicio) - timeToMinutes(b.horaInicio))
+  }, [reservations, desmarcarModalDate])
 
   const isSlotBusy = useCallback(
     (sala, slotStart, slotEnd) => {
@@ -181,6 +211,21 @@ export default function App() {
     setReservations((prev) => prev.filter((r) => r.id !== id))
   }
 
+  function openDesmarcarModal() {
+    setDesmarcarModalDate(selectedDate)
+    setRececaoMenuOpen(false)
+    setDesmarcarModalOpen(true)
+  }
+
+  function confirmDesmarcar(r) {
+    const ok = window.confirm(
+      `Desmarcar a reunião “${r.titulo}” (${r.sala}, ${r.horaInicio}–${r.horaFim})?`,
+    )
+    if (ok) {
+      removeReservation(r.id)
+    }
+  }
+
   return (
     <div className="app">
       <header className="app__header">
@@ -212,11 +257,37 @@ export default function App() {
                 Painel
               </button>
             </nav>
-            <div className="app__user-chip" title="Posto de utilização">
-              <span className="app__user-chip-label">Recepção</span>
-              <span className="app__user-chip-chevron" aria-hidden>
-                ▾
-              </span>
+            <div className="app__rececao" ref={rececaoWrapRef}>
+              <button
+                type="button"
+                className={`app__user-chip app__user-chip--trigger${rececaoMenuOpen ? ' app__user-chip--open' : ''}`}
+                title="Menu do posto — Recepção"
+                aria-expanded={rececaoMenuOpen}
+                aria-haspopup="true"
+                id="rececao-menu-button"
+                onClick={() => setRececaoMenuOpen((o) => !o)}
+              >
+                <span className="app__user-chip-label">Recepção</span>
+                <span className="app__user-chip-chevron" aria-hidden>
+                  ▾
+                </span>
+              </button>
+              {rececaoMenuOpen ? (
+                <div
+                  className="app__rececao-menu"
+                  role="menu"
+                  aria-labelledby="rececao-menu-button"
+                >
+                  <button
+                    type="button"
+                    className="app__rececao-menu-item"
+                    role="menuitem"
+                    onClick={openDesmarcarModal}
+                  >
+                    Desmarcar reunião…
+                  </button>
+                </div>
+              ) : null}
             </div>
           </div>
 
@@ -460,6 +531,71 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {desmarcarModalOpen ? (
+        <div
+          className="app__modal-backdrop"
+          role="presentation"
+          onClick={() => setDesmarcarModalOpen(false)}
+        >
+          <div
+            className="app__modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="desmarcar-modal-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="desmarcar-modal-title" className="app__modal-title">
+              Desmarcar reunião
+            </h2>
+            <p className="app__modal-hint">
+              Escolha o dia e desmarque a reunião. A sala volta a ficar disponível nesse horário.
+            </p>
+            <div className="app__modal-field">
+              <label htmlFor="desmarcar-data">Data</label>
+              <input
+                id="desmarcar-data"
+                type="date"
+                value={desmarcarModalDate}
+                onChange={(e) => setDesmarcarModalDate(e.target.value)}
+              />
+            </div>
+            {desmarcarList.length === 0 ? (
+              <p className="app__modal-empty">Nenhuma reserva nesta data.</p>
+            ) : (
+              <ul className="app__modal-list">
+                {desmarcarList.map((r) => (
+                  <li key={r.id} className="app__modal-list-item">
+                    <div className="app__modal-list-text">
+                      <strong>{r.titulo}</strong>
+                      <span>
+                        {r.horaInicio} – {r.horaFim} · {r.sala}
+                      </span>
+                      <span className="app__modal-list-sub">{r.solicitante}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn-ghost btn-ghost--danger"
+                      onClick={() => confirmDesmarcar(r)}
+                    >
+                      Desmarcar
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="app__modal-actions">
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => setDesmarcarModalOpen(false)}
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
