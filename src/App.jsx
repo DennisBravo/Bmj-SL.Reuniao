@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import Painel from './Painel.jsx'
 import {
   SALAS,
   SLOT_MINUTES,
@@ -72,7 +71,6 @@ function findConflictRange(sala, startISO, endISO, startMin, endMin, reservation
 
 export default function App() {
   const { reservations, setReservations, cancelReservationWithAudit } = useReservas()
-  const [activeTab, setActiveTab] = useState('reservas')
   const [selectedDate, setSelectedDate] = useState(() => todayISO())
 
   const [form, setForm] = useState({
@@ -207,9 +205,7 @@ export default function App() {
   return (
     <div className="app">
       <header className="app__header">
-        <div
-          className={`app__header-row${activeTab === 'painel' ? ' app__header-row--painel' : ''}`}
-        >
+        <div className="app__header-row">
           <div
             className="app__header-logo app__header-grid-logo"
             style={{ transform: `translateX(${HEADER_LOGO_SHIFT_X_PX}px)` }}
@@ -218,22 +214,9 @@ export default function App() {
           </div>
           <div className="app__header-top-right app__header-grid-nav">
             <nav className="app__tabs" aria-label="Navegação principal">
-              <button
-                type="button"
-                className={`app__tab ${activeTab === 'reservas' ? 'app__tab--active' : ''}`}
-                aria-current={activeTab === 'reservas' ? 'page' : undefined}
-                onClick={() => setActiveTab('reservas')}
-              >
+              <span className="app__tab app__tab--active" aria-current="page">
                 Reservas
-              </button>
-              <button
-                type="button"
-                className={`app__tab ${activeTab === 'painel' ? 'app__tab--active' : ''}`}
-                aria-current={activeTab === 'painel' ? 'page' : undefined}
-                onClick={() => setActiveTab('painel')}
-              >
-                Painel
-              </button>
+              </span>
             </nav>
             <NavLink
               to="/recepcao"
@@ -246,35 +229,24 @@ export default function App() {
             </NavLink>
           </div>
 
-          <h1
-            className={`app__title app__header-grid-title${activeTab === 'painel' ? ' app__header-grid-title--full' : ''}`}
-          >
-            {activeTab === 'reservas' ? 'Reserva de salas' : 'Painel de reservas'}
-          </h1>
-          {activeTab === 'reservas' ? (
-            <div className="app__date app__date--title-row app__header-grid-date">
-              <label htmlFor="dia">Data</label>
-              <input
-                id="dia"
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-              />
-            </div>
-          ) : null}
+          <h1 className="app__title app__header-grid-title">Reserva de salas</h1>
+          <div className="app__date app__date--title-row app__header-grid-date">
+            <label htmlFor="dia">Data</label>
+            <input
+              id="dia"
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+            />
+          </div>
 
           <p className="app__subtitle app__header-grid-subtitle">
-            {activeTab === 'reservas'
-              ? 'Faça sua reserva e evite conflitos de horário nas salas.'
-              : 'Indicadores e relatório do período selecionado.'}
+            Faça sua reserva e evite conflitos de horário nas salas.
           </p>
         </div>
       </header>
 
-      {activeTab === 'painel' ? (
-        <Painel reservations={reservations} />
-      ) : (
-        <div className="app__layout">
+      <div className="app__layout">
           <section className="panel panel--grid">
             <h2 className="panel__title">Disponibilidade por sala e horário</h2>
             <div className="legend">
@@ -499,7 +471,6 @@ export default function App() {
             </section>
           </div>
         </div>
-      )}
 
       {cancelTarget ? (
         <CancelarReservaModal

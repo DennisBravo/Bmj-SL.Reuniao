@@ -46,7 +46,8 @@ export default function MapaSemanal() {
   const embedded = Boolean(useOutletContext()?.embedded)
   const [searchParams, setSearchParams] = useSearchParams()
   const [weekMonday, setWeekMonday] = useState(() => mondayOfWeekContaining(todayISO()))
-  const [salaFilter, setSalaFilter] = useState('')
+  /** Salas visíveis no mapa; vazio = nenhuma linha (utilizador deve marcar pelo menos uma). */
+  const [salasMarcadas, setSalasMarcadas] = useState(() => new Set(SALAS))
   const [cellModal, setCellModal] = useState(null)
   const [cancelTarget, setCancelTarget] = useState(null)
 
@@ -60,10 +61,25 @@ export default function MapaSemanal() {
   const weekDays = useMemo(() => weekDayISOsFromMonday(weekMonday), [weekMonday])
 
   const salasFiltradas = useMemo(() => {
-    const q = salaFilter.trim().toLowerCase()
-    if (!q) return SALAS
-    return SALAS.filter((s) => s.toLowerCase().includes(q))
-  }, [salaFilter])
+    return SALAS.filter((s) => salasMarcadas.has(s))
+  }, [salasMarcadas])
+
+  function toggleSala(sala) {
+    setSalasMarcadas((prev) => {
+      const next = new Set(prev)
+      if (next.has(sala)) next.delete(sala)
+      else next.add(sala)
+      return next
+    })
+  }
+
+  function marcarTodasSalas() {
+    setSalasMarcadas(new Set(SALAS))
+  }
+
+  function desmarcarTodasSalas() {
+    setSalasMarcadas(new Set())
+  }
 
   function prevWeek() {
     const d = new Date(`${weekMonday}T12:00:00`)
@@ -130,15 +146,39 @@ export default function MapaSemanal() {
               onChange={(e) => setWeekMonday(mondayOfWeekContaining(e.target.value))}
             />
           </div>
-          <div className="mapa-semanal__field mapa-semanal__field--grow">
-            <label htmlFor="mapa-filtro-sala">Filtrar salas (nome)</label>
-            <input
-              id="mapa-filtro-sala"
-              type="search"
-              placeholder="Ex.: Ipê, Sala 03…"
-              value={salaFilter}
-              onChange={(e) => setSalaFilter(e.target.value)}
-            />
+          <div className="mapa-semanal__field mapa-semanal__field--grow mapa-semanal__field--salas">
+            <div className="mapa-semanal__salas-head">
+              <span className="mapa-semanal__salas-label" id="mapa-salas-legend">
+                Salas a mostrar
+              </span>
+              <div className="mapa-semanal__salas-actions">
+                <button type="button" className="btn-ghost" onClick={marcarTodasSalas}>
+                  Todas
+                </button>
+                <button type="button" className="btn-ghost" onClick={desmarcarTodasSalas}>
+                  Nenhuma
+                </button>
+              </div>
+            </div>
+            <div
+              className="mapa-semanal__salas-menu"
+              role="group"
+              aria-labelledby="mapa-salas-legend"
+            >
+              {SALAS.map((sala) => (
+                <label key={sala} className="mapa-semanal__sala-chip">
+                  <input
+                    type="checkbox"
+                    checked={salasMarcadas.has(sala)}
+                    onChange={() => toggleSala(sala)}
+                  />
+                  <span>{sala}</span>
+                </label>
+              ))}
+            </div>
+            {salasFiltradas.length === 0 ? (
+              <p className="mapa-semanal__salas-hint">Marque pelo menos uma sala para ver linhas na grelha.</p>
+            ) : null}
           </div>
           <button type="button" className="btn btn--secondary" onClick={handlePrint}>
             Exportar PDF / Imprimir
