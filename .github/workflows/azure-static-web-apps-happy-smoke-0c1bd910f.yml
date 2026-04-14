@@ -37,10 +37,11 @@ jobs:
           action: "upload"
           ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
           # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: "/" # App source code path
-          api_location: "" # Api source code path - optional
-          output_location: "dist" # Conteúdo já gerado pelo passo "Build app" acima
-          skip_app_build: true # Evita segundo build no Oryx (usa dist do npm run build)
+          # Com skip_app_build: true, app_location = pasta já compilada; output_location vazio (doc Microsoft).
+          app_location: "dist"
+          api_location: ""
+          output_location: ""
+          skip_app_build: true
           ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:
