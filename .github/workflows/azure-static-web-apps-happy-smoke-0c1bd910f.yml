@@ -28,6 +28,9 @@ jobs:
         run: npm install
       - name: Build app
         run: npm run build
+      - name: Install API dependencies
+        working-directory: api
+        run: npm install
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -37,11 +40,13 @@ jobs:
           action: "upload"
           ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
           # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          # Com skip_app_build: true, app_location = pasta já compilada; output_location vazio (doc Microsoft).
+          # Com skip_app_build: true, app_location = pasta já compilada (Vite → dist); output_location vazio.
+          # api_location = Azure Functions (Microsoft Graph / SharePoint) em /api no site.
           app_location: "dist"
-          api_location: ""
+          api_location: "api"
           output_location: ""
           skip_app_build: true
+          skip_api_build: false
           ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:
