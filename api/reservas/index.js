@@ -131,21 +131,23 @@ function buildListFields(body) {
   if (!body || typeof body !== 'object') return {}
   if (body.fields && typeof body.fields === 'object') return { ...body.fields }
 
-  const titulo = String(body.titulo ?? body.Title ?? '').trim()
   const fields = {
-    Title: titulo || 'Reserva',
+    Title: String(body.titulo ?? body.Title ?? 'Reserva').trim() || 'Reserva',
   }
-  if (body.sala != null && String(body.sala).trim()) fields.Sala = String(body.sala).trim()
-  if (body.date != null && String(body.date).trim()) fields.DataReserva = String(body.date).trim()
-  if (body.dateFim != null && String(body.dateFim).trim()) fields.DataFim = String(body.dateFim).trim()
-  if (body.horaInicio != null) fields.HoraInicio = String(body.horaInicio)
-  if (body.horaFim != null) fields.HoraFim = String(body.horaFim)
-  if (body.solicitante != null) fields.Solicitante = String(body.solicitante)
-  if (body.emailSolicitante != null) fields.EmailSolicitante = String(body.emailSolicitante)
-  if (body.participantes != null) fields.Participantes = String(body.participantes)
-  if (body.observacoes != null) fields.Observacoes = String(body.observacoes)
-  if (body.id != null) fields.ReservaId = String(body.id)
-  if (body.createdByEmail != null) fields.CreatedByEmail = String(body.createdByEmail)
+  if (body.id != null) fields.ReservaId = String(body.id).trim()
+  if (body.sala != null) fields.NomeSala = String(body.sala).trim()
+  if (body.salaId != null) fields.SalaID = String(body.salaId).trim()
+  if (body.date != null) fields.DataReserva = String(body.date).trim()
+  if (body.dateFim != null) fields.DataReservaFim = String(body.dateFim).trim()
+  if (body.horaInicio != null) fields.HoraInicio = String(body.horaInicio).trim()
+  if (body.horaFim != null) fields['Hor_x00e1_riodeFim'] = String(body.horaFim).trim()
+  if (body.horaInicioMin != null) fields.HoraInicioMinutos = String(body.horaInicioMin)
+  if (body.horaFimMin != null) fields.HoraFimMinutos = String(body.horaFimMin)
+  if (body.solicitante != null) fields.NomedoSolicitante = String(body.solicitante).trim()
+  if (body.participantes != null) fields.ParticipantesTexto = String(body.participantes).trim()
+  if (body.observacoes != null) fields.Observacao = String(body.observacoes).trim()
+  if (body.status != null) fields.Status = String(body.status).trim()
+  fields.CriadoVia = 'App Web'
   return fields
 }
 

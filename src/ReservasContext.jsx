@@ -1,67 +1,37 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import {
-  appendAudit,
-  loadReservations,
-  saveReservations,
-  isReservationActive,
-  migrateReservation,
-} from './reservasUtils'
+import { appendAudit, loadReservations, saveReservations, isReservationActive } from './reservasUtils'
 import { canAlterReservation, normalizeEmail } from './envConfig.js'
 
 const ReservasContext = createContext(null)
 
 const RESERVAS_API_URL = import.meta.env.VITE_RESERVAS_API_URL || '/api/reservas'
 
-function toDateOnly(v) {
-  if (v == null || v === '') return ''
-  const s = String(v)
-  return s.length >= 10 ? s.slice(0, 10) : s
-}
-
-function fieldValue(fields, ...names) {
-  for (const name of names) {
-    if (fields[name] != null && fields[name] !== '') return fields[name]
-    const key = Object.keys(fields).find((k) => k.toLowerCase() === name.toLowerCase())
-    if (key != null && fields[key] != null && fields[key] !== '') return fields[key]
-  }
-  return ''
-}
-
 /** Item devolvido pelo GET /api/reservas → objeto de reserva da app */
 function graphListItemToReservation(item) {
   const f = item.fields || {}
-  const reservaId = String(fieldValue(f, 'ReservaId', 'reservaId') || '').trim()
-  const id = reservaId || (item.id != null ? `sp-${item.id}` : '')
-  if (!id) return null
-
-  const date = toDateOnly(fieldValue(f, 'DataReserva', 'dataReserva'))
-  const dateFimRaw = fieldValue(f, 'DataFim', 'dataFim')
-  const dateFim = dateFimRaw ? toDateOnly(dateFimRaw) : ''
-
-  const createdAt =
-    item.createdDateTime || fieldValue(f, 'Created', 'created') || new Date().toISOString()
-  const updatedAt = item.lastModifiedDateTime || fieldValue(f, 'Modified', 'modified') || createdAt
-
-  return migrateReservation({
-    id,
-    titulo: String(fieldValue(f, 'Title', 'title') || 'Reserva'),
-    sala: String(fieldValue(f, 'Sala', 'sala') || ''),
-    date,
-    ...(dateFim && dateFim !== date ? { dateFim } : {}),
-    horaInicio: String(fieldValue(f, 'HoraInicio', 'horainicio') || ''),
-    horaFim: String(fieldValue(f, 'HoraFim', 'horafim') || ''),
-    solicitante: String(fieldValue(f, 'Solicitante', 'solicitante') || ''),
-    emailSolicitante: String(fieldValue(f, 'EmailSolicitante', 'emailsolicitante') || ''),
-    participantes: String(fieldValue(f, 'Participantes', 'participantes') || ''),
-    observacoes: String(fieldValue(f, 'Observacoes', 'observacoes') || ''),
-    createdByEmail: String(
-      fieldValue(f, 'CreatedByEmail', 'createdbyemail', 'emailSolicitante') || '',
-    ),
-    createdAt,
-    updatedAt,
-    deletedAt: fieldValue(f, 'DeletedAt', 'deletedat') || null,
-    deletedByEmail: fieldValue(f, 'DeletedByEmail', 'deletedbyemail') || null,
-  })
+  return {
+    id: f.ReservaId || String(item.id),
+    titulo: f.Title || '',
+    sala: f.NomeSala || '',
+    salaId: f.SalaID || '',
+    date: f.DataReserva ? f.DataReserva.slice(0, 10) : '',
+    dateFim: f.DataReservaFim ? f.DataReservaFim.slice(0, 10) : null,
+    horaInicio: f.HoraInicio || '',
+    horaFim: f['Hor_x00e1_riodeFim'] || '',
+    horaInicioMin: f.HoraInicioMinutos ? Number(f.HoraInicioMinutos) : undefined,
+    horaFimMin: f.HoraFimMinutos ? Number(f.HoraFimMinutos) : undefined,
+    solicitante: f.NomedoSolicitante || '',
+    emailSolicitante: f.EmailSolicitante || '',
+    participantes: f.ParticipantesTexto || '',
+    observacoes: f.Observacao || '',
+    status: f.Status || 'ativo',
+    criadoVia: f.CriadoVia || '',
+    createdAt: item.createdDateTime || '',
+    updatedAt: item.lastModifiedDateTime || '',
+    deletedAt: f.DeletadoEm || null,
+    deletedByEmail: f.DeletadoPorEmail || null,
+    createdByEmail: f.EmailSolicitante || '',
+  }
 }
 
 /** Preserva soft-delete feito só no cliente após um GET ao servidor */
