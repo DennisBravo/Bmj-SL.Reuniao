@@ -72,7 +72,8 @@ function findConflictRange(sala, startISO, endISO, startMin, endMin, reservation
 }
 
 export default function App() {
-  const { reservations, addReservation, cancelReservationWithAudit } = useReservas()
+  const { reservations, addReservation, cancelReservationWithAudit, loading, error, clearError } =
+    useReservas()
   const [selectedDate, setSelectedDate] = useState(() => todayISO())
 
   const [form, setForm] = useState({
@@ -125,11 +126,13 @@ export default function App() {
   function updateField(key, value) {
     setForm((f) => ({ ...f, [key]: value }))
     setFormError('')
+    clearError()
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     setFormError('')
+    clearError()
 
     const titulo = form.titulo.trim()
     const solicitante = form.solicitante.trim()
@@ -207,23 +210,27 @@ export default function App() {
       deletedAt: null,
       deletedByEmail: null,
     }
-    addReservation(novo)
-    void notifyTeamsNewReservationWithNotes({
-      sala: novo.sala,
-      date: novo.date,
-      dateFim: novo.dateFim,
-      horaInicio: novo.horaInicio,
-      horaFim: novo.horaFim,
-      solicitante: novo.solicitante,
-      participantes: novo.participantes,
-      observacoes: novo.observacoes,
-    })
-    setForm((f) => ({
-      ...f,
-      titulo: '',
-      participantes: '',
-      observacoes: '',
-    }))
+    try {
+      await addReservation(novo)
+      void notifyTeamsNewReservationWithNotes({
+        sala: novo.sala,
+        date: novo.date,
+        dateFim: novo.dateFim,
+        horaInicio: novo.horaInicio,
+        horaFim: novo.horaFim,
+        solicitante: novo.solicitante,
+        participantes: novo.participantes,
+        observacoes: novo.observacoes,
+      })
+      setForm((f) => ({
+        ...f,
+        titulo: '',
+        participantes: '',
+        observacoes: '',
+      }))
+    } catch {
+      setFormError('Não foi possível guardar a reserva. Tente novamente ou verifique a ligação ao servidor.')
+    }
   }
 
   return (
@@ -260,13 +267,34 @@ export default function App() {
               id="dia"
               type="date"
               value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
+              onChange={(e) => {
+                setSelectedDate(e.target.value)
+                setFormError('')
+                clearError()
+              }}
             />
           </div>
 
           <p className="app__subtitle app__header-grid-subtitle">
             Faça sua reserva e evite conflitos de horário nas salas.
           </p>
+          {loading && reservations.length === 0 ? (
+            <p className="app__subtitle app__header-grid-subtitle app__sync-hint" aria-live="polite">
+              A carregar reservas…
+            </p>
+          ) : null}
+          {error ? (
+            <div
+              className="form__error app__context-alert"
+              role="alert"
+              style={{ maxWidth: 560, marginTop: 8 }}
+            >
+              <span>{error}</span>{' '}
+              <button type="button" className="btn-ghost" onClick={clearError}>
+                Fechar
+              </button>
+            </div>
+          ) : null}
         </div>
       </header>
 
@@ -457,8 +485,12 @@ export default function App() {
                 </div>
 
                 <div className="form__actions">
-                  <button type="submit" className="btn">
-                    Confirmar reserva
+                  <button type="submit" className="btn" disabled={loading}>
+                    {loading && reservations.length > 0
+                      ? 'A guardar…'
+                      : loading
+                        ? 'Aguarde…'
+                        : 'Confirmar reserva'}
                   </button>
                 </div>
               </form>
