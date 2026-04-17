@@ -10,7 +10,7 @@ const RESERVAS_API_URL = import.meta.env.VITE_RESERVAS_API_URL || '/api/reservas
 function graphListItemToReservation(item) {
   const f = item.fields || {}
   return {
-    id: f.ReservaId || String(item.id),
+    id: f.ReservaID || String(item.id),
     titulo: f.Title || '',
     sala: f.NomeSala || '',
     salaId: f.SalaID || '',

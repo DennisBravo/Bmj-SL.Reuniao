@@ -134,7 +134,7 @@ function buildListFields(body) {
   const fields = {
     Title: String(body.titulo ?? body.Title ?? 'Reserva').trim() || 'Reserva',
   }
-  if (body.id != null) fields.ReservaId = String(body.id).trim()
+  if (body.id != null) fields.ReservaID = String(body.id).trim()
   if (body.sala != null) fields.NomeSala = String(body.sala).trim()
   if (body.salaId != null) fields.SalaID = String(body.salaId).trim()
   if (body.date != null) fields.DataReserva = String(body.date).trim()
