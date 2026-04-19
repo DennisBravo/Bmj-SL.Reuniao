@@ -155,7 +155,12 @@ function buildListFields(body) {
   if (body.sala != null) fields.NomeSala = String(body.sala).trim()
   if (body.salaId != null) fields.SalaID = String(body.salaId).trim()
   if (body.date != null) fields.DataReserva = String(body.date).trim()
-  if (body.dateFim != null) fields.DataReservaFim = String(body.dateFim).trim()
+  // Apenas multi-dia (evita 400 "Field DataReservaFim is not recognized" em reserva de um dia).
+  const dateStart = body.date != null ? String(body.date).trim() : ''
+  const dateEnd = body.dateFim != null ? String(body.dateFim).trim() : ''
+  if (dateEnd && dateEnd !== dateStart) {
+    fields.DataReservaFim = dateEnd
+  }
   if (body.horaInicio != null) fields.HoraInicio = String(body.horaInicio).trim()
   if (body.horaFim != null) fields['Hor_x00e1_riodeFim'] = String(body.horaFim).trim()
   if (body.horaInicioMin != null) fields.HoraInicioMinutos = String(body.horaInicioMin)
