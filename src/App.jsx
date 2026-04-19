@@ -65,14 +65,13 @@ export default function App() {
 
   useEffect(() => {
     function onKey(e) {
-      if (e.key === 'Escape') {
-        setCancelTarget(null)
-        setEditTarget(null)
-      }
+      if (e.key !== 'Escape') return
+      setCancelTarget(null)
+      if (!loading) setEditTarget(null)
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [])
+  }, [loading])
 
   const reservationsForDay = useMemo(
     () => reservations.filter((r) => reservationCoversDate(r, selectedDate)),

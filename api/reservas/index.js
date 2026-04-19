@@ -166,6 +166,7 @@ function buildListFields(body) {
   if (body.horaInicioMin != null) fields.HoraInicioMinutos = String(body.horaInicioMin)
   if (body.horaFimMin != null) fields.HoraFimMinutos = String(body.horaFimMin)
   if (body.solicitante != null) fields.NomedoSolicitante = String(body.solicitante).trim()
+  if (body.emailSolicitante != null) fields.EmailSolicitante = String(body.emailSolicitante).trim()
   if (body.participantes != null) fields.ParticipantesTexto = String(body.participantes).trim()
   if (body.observacoes != null) fields.Observacao = String(body.observacoes).trim()
   if (body.status != null) fields.Status = String(body.status).trim()

@@ -19,7 +19,7 @@ function buildForm(r) {
     horaInicio: r.horaInicio || '09:00',
     horaFim: r.horaFim || '10:00',
     solicitante: r.solicitante || '',
-    emailSolicitante: r.emailSolicitante || '',
+    emailSolicitante: r.emailSolicitante || r.createdByEmail || '',
     participantes: r.participantes || '',
     observacoes: r.observacoes || '',
   }
@@ -127,13 +127,21 @@ export default function EditarReservaModal({ reservation, reservations, loading,
     try {
       await onSave(payload)
       onClose()
-    } catch {
-      setFormError('Não foi possível guardar as alterações. Tente novamente.')
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : 'Não foi possível guardar as alterações. Tente novamente.'
+      setFormError(msg)
     }
   }
 
   return (
-    <div className="app__modal-backdrop" role="presentation" onClick={onClose}>
+    <div
+      className="app__modal-backdrop"
+      role="presentation"
+      onClick={() => {
+        if (!loading) onClose()
+      }}
+    >
       <div
         className="app__modal app__modal--edit"
         role="dialog"
@@ -147,7 +155,7 @@ export default function EditarReservaModal({ reservation, reservations, loading,
         <p className="app__modal-hint">
           Altere qualquer campo, incluindo observações. As mudanças são guardadas no SharePoint.
         </p>
-        <form className="form" onSubmit={handleSubmit}>
+        <form className="form" onSubmit={handleSubmit} noValidate>
           {formError ? <p className="form__error">{formError}</p> : null}
 
           <div className="form__row">
@@ -267,7 +275,7 @@ export default function EditarReservaModal({ reservation, reservations, loading,
           </div>
 
           <div className="app__modal-actions app__modal-actions--form">
-            <button type="button" className="btn-ghost" onClick={onClose}>
+            <button type="button" className="btn-ghost" disabled={loading} onClick={() => !loading && onClose()}>
               Cancelar
             </button>
             <button type="submit" className="btn" disabled={loading}>
