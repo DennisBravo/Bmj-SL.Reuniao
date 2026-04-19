@@ -6,9 +6,20 @@ const ReservasContext = createContext(null)
 
 const RESERVAS_API_URL = import.meta.env.VITE_RESERVAS_API_URL || '/api/reservas'
 
+function emailFromSharePointFields(f) {
+  if (!f || typeof f !== 'object') return ''
+  const v =
+    f.EmailSolicitante ||
+    f.Email_x0020_Solicitante ||
+    f.EmaildoSolicitante ||
+    ''
+  return typeof v === 'string' ? v : String(v ?? '')
+}
+
 /** Item devolvido pelo GET /api/reservas → objeto de reserva da app */
 function graphListItemToReservation(item) {
   const f = item.fields || {}
+  const email = emailFromSharePointFields(f)
   return {
     graphItemId: String(item.id),
     id: f.ReservaID || String(item.id),
@@ -22,7 +33,7 @@ function graphListItemToReservation(item) {
     horaInicioMin: f.HoraInicioMinutos ? Number(f.HoraInicioMinutos) : undefined,
     horaFimMin: f.HoraFimMinutos ? Number(f.HoraFimMinutos) : undefined,
     solicitante: f.NomedoSolicitante || '',
-    emailSolicitante: f.EmailSolicitante || '',
+    emailSolicitante: email,
     participantes: f.ParticipantesTexto || '',
     observacoes: f.Observacao || '',
     status: f.Status || 'ativo',
@@ -31,7 +42,7 @@ function graphListItemToReservation(item) {
     updatedAt: item.lastModifiedDateTime || '',
     deletedAt: f.DeletadoEm || null,
     deletedByEmail: f.DeletadoPorEmail || null,
-    createdByEmail: f.EmailSolicitante || '',
+    createdByEmail: email,
   }
 }
 
