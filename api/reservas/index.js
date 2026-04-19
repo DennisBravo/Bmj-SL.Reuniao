@@ -12,17 +12,6 @@ function readEnv() {
   return { tenantId, clientId, clientSecret, siteUrl, listName }
 }
 
-/**
- * Grava e-mail na lista só se existir Application Setting com o nome interno correto.
- * Nomes como EmailSolicitante / Email_x0020_Solicitante variam por lista; um nome errado = 400 em todo POST/PATCH.
- */
-function maybeSetEmailField(fields, body) {
-  const name = process.env.SHAREPOINT_FIELD_EMAIL_SOLICITANTE
-  if (name == null || String(name).trim() === '') return
-  if (body.emailSolicitante == null) return
-  fields[String(name).trim()] = String(body.emailSolicitante).trim()
-}
-
 function jsonRes(context, status, body) {
   context.res = {
     status,
@@ -177,7 +166,7 @@ function buildListFields(body) {
   if (body.horaInicioMin != null) fields.HoraInicioMinutos = String(body.horaInicioMin)
   if (body.horaFimMin != null) fields.HoraFimMinutos = String(body.horaFimMin)
   if (body.solicitante != null) fields.NomedoSolicitante = String(body.solicitante).trim()
-  maybeSetEmailField(fields, body)
+  if (body.emailSolicitante != null) fields.EmailSolicitante = String(body.emailSolicitante).trim()
   if (body.participantes != null) fields.ParticipantesTexto = String(body.participantes).trim()
   if (body.observacoes != null) fields.Observacao = String(body.observacoes).trim()
   if (body.status != null) fields.Status = String(body.status).trim()
