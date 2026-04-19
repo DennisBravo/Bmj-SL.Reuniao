@@ -9,12 +9,13 @@ import {
   minutesToTime,
   isValidEmail,
   todayISO,
-  eachDateISOInRange,
   reservationCoversDate,
+  findReservationConflictRange,
 } from './reservasUtils'
 import { useReservas } from './ReservasContext.jsx'
 import BmjLogo from './components/BmjLogo.jsx'
 import CancelarReservaModal from './components/CancelarReservaModal.jsx'
+import EditarReservaModal from './components/EditarReservaModal.jsx'
 import { getCurrentUserEmail, normalizeEmail, canAlterReservation, PERMISSAO_NEGADA_MSG } from './envConfig.js'
 import { notifyTeamsNewReservationWithNotes } from './teamsWebhook.js'
 import './App.css'
@@ -38,41 +39,12 @@ function formatShortDateBR(iso) {
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })
 }
 
-/** Intervalos [start, end) em minutos do mesmo dia — conflito se houver sobreposição */
-function intervalsOverlap(aStart, aEnd, bStart, bEnd) {
-  return aStart < bEnd && bStart < aEnd
-}
-
 function slotCoveredByReservation(slotStart, slotEnd, resStart, resEnd) {
   return resStart < slotEnd && slotStart < resEnd
 }
 
-function findConflict(sala, date, startMin, endMin, reservations, excludeId) {
-  if (endMin <= startMin) {
-    return 'O horário de fim deve ser depois do horário de início.'
-  }
-  for (const r of reservations) {
-    if (r.id === excludeId) continue
-    if (r.sala !== sala || r.date !== date) continue
-    const rs = timeToMinutes(r.horaInicio)
-    const re = timeToMinutes(r.horaFim)
-    if (intervalsOverlap(startMin, endMin, rs, re)) {
-      return `Conflito: já existe reserva nesta sala entre ${r.horaInicio} e ${r.horaFim} (“${r.titulo}”).`
-    }
-  }
-  return null
-}
-
-function findConflictRange(sala, startISO, endISO, startMin, endMin, reservations, excludeId) {
-  for (const d of eachDateISOInRange(startISO, endISO)) {
-    const c = findConflict(sala, d, startMin, endMin, reservations, excludeId)
-    if (c) return `${c} (em ${d})`
-  }
-  return null
-}
-
 export default function App() {
-  const { reservations, addReservation, cancelReservationWithAudit, loading, error, clearError } =
+  const { reservations, addReservation, updateReservation, cancelReservationWithAudit, loading, error, clearError } =
     useReservas()
   const [selectedDate, setSelectedDate] = useState(() => todayISO())
 
@@ -89,11 +61,13 @@ export default function App() {
   })
   const [formError, setFormError] = useState('')
   const [cancelTarget, setCancelTarget] = useState(null)
+  const [editTarget, setEditTarget] = useState(null)
 
   useEffect(() => {
     function onKey(e) {
       if (e.key === 'Escape') {
         setCancelTarget(null)
+        setEditTarget(null)
       }
     }
     document.addEventListener('keydown', onKey)
@@ -173,7 +147,7 @@ export default function App() {
       return
     }
 
-    const conflict = findConflictRange(
+    const conflict = findReservationConflictRange(
       form.sala,
       selectedDate,
       dataFim,
@@ -533,13 +507,24 @@ export default function App() {
                       </div>
                       <div className="reservation-card__actions">
                         {canAlterReservation(r) ? (
-                          <button
-                            type="button"
-                            className="btn-ghost"
-                            onClick={() => setCancelTarget(r)}
-                          >
-                            Cancelar reserva
-                          </button>
+                          <>
+                            {r.graphItemId ? (
+                              <button
+                                type="button"
+                                className="btn-ghost"
+                                onClick={() => setEditTarget(r)}
+                              >
+                                Editar
+                              </button>
+                            ) : null}
+                            <button
+                              type="button"
+                              className="btn-ghost"
+                              onClick={() => setCancelTarget(r)}
+                            >
+                              Cancelar reserva
+                            </button>
+                          </>
                         ) : (
                           <p className="reservation-card__no-perm" role="status">
                             {PERMISSAO_NEGADA_MSG}
@@ -559,6 +544,18 @@ export default function App() {
           reservation={cancelTarget}
           onClose={() => setCancelTarget(null)}
           onConfirm={(payload) => cancelReservationWithAudit(cancelTarget, payload)}
+        />
+      ) : null}
+      {editTarget ? (
+        <EditarReservaModal
+          key={editTarget.id}
+          reservation={editTarget}
+          reservations={reservations}
+          loading={loading}
+          onClose={() => setEditTarget(null)}
+          onSave={async (payload) => {
+            await updateReservation(payload)
+          }}
         />
       ) : null}
     </div>

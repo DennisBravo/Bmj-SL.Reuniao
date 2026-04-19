@@ -223,3 +223,41 @@ export function reservationMinutesInPeriod(r, periodStart, periodEnd) {
   const dm = reservationDurationMinutes(r)
   return n * dm
 }
+
+function intervalsOverlap(aStart, aEnd, bStart, bEnd) {
+  return aStart < bEnd && bStart < aEnd
+}
+
+/** Conflito num único dia (mesma sala). `excludeId` ignora a própria reserva na edição. */
+export function findReservationConflict(sala, date, startMin, endMin, reservations, excludeId) {
+  if (endMin <= startMin) {
+    return 'O horário de fim deve ser depois do horário de início.'
+  }
+  for (const r of reservations) {
+    if (r.id === excludeId) continue
+    if (r.sala !== sala || r.date !== date) continue
+    const rs = timeToMinutes(r.horaInicio)
+    const re = timeToMinutes(r.horaFim)
+    if (intervalsOverlap(startMin, endMin, rs, re)) {
+      return `Conflito: já existe reserva nesta sala entre ${r.horaInicio} e ${r.horaFim} (“${r.titulo}”).`
+    }
+  }
+  return null
+}
+
+/** Conflito em intervalo de vários dias (mesmo horário em cada dia). */
+export function findReservationConflictRange(
+  sala,
+  startISO,
+  endISO,
+  startMin,
+  endMin,
+  reservations,
+  excludeId,
+) {
+  for (const d of eachDateISOInRange(startISO, endISO)) {
+    const c = findReservationConflict(sala, d, startMin, endMin, reservations, excludeId)
+    if (c) return `${c} (em ${d})`
+  }
+  return null
+}

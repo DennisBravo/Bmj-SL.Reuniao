@@ -82,6 +82,23 @@ async function graphPostJson(url, token, payload) {
   return data
 }
 
+async function graphPatchJson(url, token, payload) {
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const msg = data.error?.message || JSON.stringify(data.error || data)
+    throw new Error(`${res.status} ${msg}`)
+  }
+  return data
+}
+
 async function resolveSiteId(token, siteUrl) {
   const resource = siteResourceFromUrl(siteUrl)
   const url = `${GRAPH_BASE}/sites/${encodeURIComponent(resource)}`
@@ -147,7 +164,7 @@ function buildListFields(body) {
   if (body.participantes != null) fields.ParticipantesTexto = String(body.participantes).trim()
   if (body.observacoes != null) fields.Observacao = String(body.observacoes).trim()
   if (body.status != null) fields.Status = String(body.status).trim()
-  fields.CriadoVia = 'App Web'
+  if (!body._patch) fields.CriadoVia = 'App Web'
   return fields
 }
 
@@ -201,6 +218,29 @@ module.exports = async function (context, req) {
         createdDateTime: created.createdDateTime,
         lastModifiedDateTime: created.lastModifiedDateTime,
         fields: created.fields || {},
+      })
+      return
+    }
+
+    if (method === 'PATCH') {
+      const body = parseRequestBody(req)
+      const graphItemId = body.graphItemId != null ? String(body.graphItemId).trim() : ''
+      if (!graphItemId) {
+        jsonRes(context, 400, { error: 'graphItemId é obrigatório para atualizar a reserva.' })
+        return
+      }
+      const patchBody = { ...body, _patch: true }
+      const fields = buildListFields(patchBody)
+      const url = `${GRAPH_BASE}/sites/${encodeURIComponent(siteId)}/lists/${encodeURIComponent(
+        listId,
+      )}/items/${encodeURIComponent(graphItemId)}`
+      const updated = await graphPatchJson(url, token, { fields })
+      jsonRes(context, 200, {
+        id: updated.id,
+        eTag: updated.eTag,
+        createdDateTime: updated.createdDateTime,
+        lastModifiedDateTime: updated.lastModifiedDateTime,
+        fields: updated.fields || {},
       })
       return
     }

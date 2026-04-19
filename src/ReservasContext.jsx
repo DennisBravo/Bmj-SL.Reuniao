@@ -10,6 +10,7 @@ const RESERVAS_API_URL = import.meta.env.VITE_RESERVAS_API_URL || '/api/reservas
 function graphListItemToReservation(item) {
   const f = item.fields || {}
   return {
+    graphItemId: String(item.id),
     id: f.ReservaID || String(item.id),
     titulo: f.Title || '',
     sala: f.NomeSala || '',
@@ -119,6 +120,42 @@ export function ReservasProvider({ children }) {
     [loadFromServer],
   )
 
+  const updateReservation = useCallback(
+    async (payload) => {
+      setError(null)
+      setLoading(true)
+      try {
+        const res = await fetch(RESERVAS_API_URL, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...payload, _patch: true }),
+        })
+        const text = await res.text()
+        let data = {}
+        try {
+          data = text ? JSON.parse(text) : {}
+        } catch {
+          data = {}
+        }
+        if (!res.ok) {
+          const msg = data.detail || data.error || `Erro ${res.status} ao atualizar reserva.`
+          throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg))
+        }
+        const refreshed = await loadFromServer({ useFallbackOnError: false, mergeCancellations: true })
+        if (!refreshed) {
+          throw new Error('Reserva atualizada, mas não foi possível recarregar a lista.')
+        }
+      } catch (e) {
+        const msg = e.message || 'Não foi possível atualizar a reserva.'
+        setError(msg)
+        throw e
+      } finally {
+        setLoading(false)
+      }
+    },
+    [loadFromServer],
+  )
+
   const addReservation = useCallback(
     async (nova) => {
       setError(null)
@@ -206,6 +243,7 @@ export function ReservasProvider({ children }) {
       reservations,
       allReservations,
       addReservation,
+      updateReservation,
       setReservations: setAllReservations,
       removeReservation,
       cancelReservationWithAudit,
@@ -218,6 +256,7 @@ export function ReservasProvider({ children }) {
       reservations,
       allReservations,
       addReservation,
+      updateReservation,
       removeReservation,
       cancelReservationWithAudit,
       loading,

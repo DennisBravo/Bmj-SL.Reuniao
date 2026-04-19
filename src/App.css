@@ -909,6 +909,14 @@
 
 .reservation-card__actions {
   margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.app__modal--edit {
+  max-width: min(560px, 100vw - 2rem);
 }
 
 .btn-ghost {
