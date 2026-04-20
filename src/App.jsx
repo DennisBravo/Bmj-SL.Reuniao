@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import {
   SALAS,
@@ -11,9 +11,12 @@ import {
   todayISO,
   reservationCoversDate,
   findReservationConflictRange,
+  findReservationForSlot,
+  reservationQuickSummaryLine,
 } from './reservasUtils'
 import { useReservas } from './ReservasContext.jsx'
 import BmjLogo from './components/BmjLogo.jsx'
+import ReservaSlotDetalheModal from './components/ReservaSlotDetalheModal.jsx'
 import { getCurrentUserEmail, normalizeEmail } from './envConfig.js'
 import { notifyTeamsNewReservationWithNotes } from './teamsWebhook.js'
 import './App.css'
@@ -30,10 +33,6 @@ const TIME_SLOTS = buildTimeSlots()
 
 /** Desloca a logo para a esquerda (px). Negativo = esquerda. ~113px ≈ 3cm em ecrã típico. */
 const HEADER_LOGO_SHIFT_X_PX = -266
-
-function slotCoveredByReservation(slotStart, slotEnd, resStart, resEnd) {
-  return resStart < slotEnd && slotStart < resEnd
-}
 
 export default function App() {
   const { reservations, addReservation, loading, error, clearError } = useReservas()
@@ -52,6 +51,26 @@ export default function App() {
   })
   const [formError, setFormError] = useState('')
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [detalheReserva, setDetalheReserva] = useState(null)
+  const [slotHoverPreview, setSlotHoverPreview] = useState(null)
+  const hoverHideTimerRef = useRef(null)
+
+  const cancelHoverHide = useCallback(() => {
+    if (hoverHideTimerRef.current) {
+      window.clearTimeout(hoverHideTimerRef.current)
+      hoverHideTimerRef.current = null
+    }
+  }, [])
+
+  const scheduleHoverHide = useCallback(() => {
+    cancelHoverHide()
+    hoverHideTimerRef.current = window.setTimeout(() => {
+      setSlotHoverPreview(null)
+      hoverHideTimerRef.current = null
+    }, 240)
+  }, [cancelHoverHide])
+
+  useEffect(() => () => cancelHoverHide(), [cancelHoverHide])
 
   useEffect(() => {
     if (!saveSuccess) return
@@ -64,17 +83,35 @@ export default function App() {
     [reservations, selectedDate],
   )
 
-  const isSlotBusy = useCallback(
-    (sala, slotStart, slotEnd) => {
-      return reservationsForDay.some((r) => {
-        if (r.sala !== sala) return false
-        const rs = timeToMinutes(r.horaInicio)
-        const re = timeToMinutes(r.horaFim)
-        return slotCoveredByReservation(slotStart, slotEnd, rs, re)
-      })
-    },
+  const getSlotReservation = useCallback(
+    (sala, slotStart, slotEnd) =>
+      findReservationForSlot(reservationsForDay, sala, slotStart, slotEnd),
     [reservationsForDay],
   )
+
+  useEffect(() => {
+    setSlotHoverPreview(null)
+    cancelHoverHide()
+    setDetalheReserva(null)
+  }, [selectedDate, cancelHoverHide])
+
+  function handleBusySlotEnter(e, res) {
+    cancelHoverHide()
+    const rect = e.currentTarget.getBoundingClientRect()
+    setSlotHoverPreview({
+      reservation: res,
+      left: rect.left + rect.width / 2,
+      top: rect.bottom + 6,
+    })
+  }
+
+  function handleBusySlotClick(e, res) {
+    e.preventDefault()
+    e.stopPropagation()
+    cancelHoverHide()
+    setSlotHoverPreview(null)
+    setDetalheReserva(res)
+  }
 
   function updateField(key, value) {
     setForm((f) => ({ ...f, [key]: value }))
@@ -268,6 +305,9 @@ export default function App() {
                 Ocupado
               </span>
               <span className="legend__item">Slots de {SLOT_MINUTES} min</span>
+              <span className="legend__item legend__item--hint">
+                Ocupado: passe o rato ou clique para ver a reserva
+              </span>
             </div>
             <div className="grid-wrap">
               <table className="availability-grid">
@@ -290,14 +330,25 @@ export default function App() {
                         {sala}
                       </th>
                       {TIME_SLOTS.map((slot) => {
-                        const busy = isSlotBusy(sala, slot.startMin, slot.endMin)
+                        const res = getSlotReservation(sala, slot.startMin, slot.endMin)
+                        const busy = res != null
+                        const slotTitle = busy
+                          ? reservationQuickSummaryLine(res, sala)
+                          : `${sala} · ${slot.label}–${minutesToTime(slot.endMin)} · Disponível`
                         return (
                           <td key={slot.startMin}>
                             <div
                               className={`slot ${busy ? 'slot--busy' : 'slot--free'}`}
-                              title={`${sala} · ${slot.label}–${minutesToTime(slot.endMin)} · ${busy ? 'Ocupado' : 'Disponível'}`}
+                              title={slotTitle}
                               role="img"
-                              aria-label={`${sala}, ${slot.label}, ${busy ? 'ocupado' : 'disponível'}`}
+                              aria-label={
+                                busy
+                                  ? `${res.titulo || 'Reserva'}, ${res.horaInicio} a ${res.horaFim}, ocupado. Passe o rato ou clique para ver detalhes.`
+                                  : `${sala}, ${slot.label}, disponível`
+                              }
+                              onMouseEnter={busy ? (e) => handleBusySlotEnter(e, res) : undefined}
+                              onMouseLeave={busy ? scheduleHoverHide : undefined}
+                              onClick={busy ? (e) => handleBusySlotClick(e, res) : undefined}
                             />
                           </td>
                         )
@@ -468,6 +519,47 @@ export default function App() {
             </section>
           </div>
         </div>
+
+      {slotHoverPreview ? (
+        <div
+          className="slot-preview-popover"
+          role="tooltip"
+          style={{
+            left: Math.min(
+              Math.max(slotHoverPreview.left, 136),
+              (typeof window !== 'undefined' ? window.innerWidth : 800) - 136,
+            ),
+            top: slotHoverPreview.top,
+          }}
+          onMouseEnter={cancelHoverHide}
+          onMouseLeave={scheduleHoverHide}
+        >
+          <strong className="slot-preview-popover__title">
+            {slotHoverPreview.reservation.titulo || 'Reunião'}
+          </strong>
+          <span className="slot-preview-popover__meta">
+            {slotHoverPreview.reservation.horaInicio}–{slotHoverPreview.reservation.horaFim} ·{' '}
+            {slotHoverPreview.reservation.sala}
+          </span>
+          {slotHoverPreview.reservation.solicitante ? (
+            <span className="slot-preview-popover__sub">{slotHoverPreview.reservation.solicitante}</span>
+          ) : null}
+          {slotHoverPreview.reservation.emailSolicitante ||
+          slotHoverPreview.reservation.createdByEmail ? (
+            <span className="slot-preview-popover__sub">
+              {slotHoverPreview.reservation.emailSolicitante ||
+                slotHoverPreview.reservation.createdByEmail}
+            </span>
+          ) : null}
+          <span className="slot-preview-popover__hint">Clique para ver tudo</span>
+        </div>
+      ) : null}
+      {detalheReserva ? (
+        <ReservaSlotDetalheModal
+          reservation={detalheReserva}
+          onClose={() => setDetalheReserva(null)}
+        />
+      ) : null}
     </div>
   )
 }

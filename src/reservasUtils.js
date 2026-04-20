@@ -164,6 +164,29 @@ export function reservationCoversDate(r, dateISO) {
   return dateISO >= r.date && dateISO <= end
 }
 
+/**
+ * Primeira reserva (menor hora de início) que ocupa o intervalo [slotStart, slotEnd) em minutos na sala.
+ */
+export function findReservationForSlot(reservations, sala, slotStart, slotEnd) {
+  const matches = reservations.filter((r) => {
+    if (r.sala !== sala) return false
+    const rs = timeToMinutes(r.horaInicio)
+    const re = timeToMinutes(r.horaFim)
+    if (Number.isNaN(rs) || Number.isNaN(re)) return false
+    return rs < slotEnd && slotStart < re
+  })
+  if (matches.length === 0) return null
+  return [...matches].sort((a, b) => timeToMinutes(a.horaInicio) - timeToMinutes(b.horaInicio))[0]
+}
+
+/** Uma linha para tooltip nativo / pré-visualização rápida. */
+export function reservationQuickSummaryLine(r, sala) {
+  const tit = (r.titulo || 'Reunião').trim().slice(0, 72)
+  const sol = (r.solicitante || '').trim().slice(0, 40)
+  const tail = sol ? ` · ${sol}` : ''
+  return `${tit} · ${r.horaInicio}–${r.horaFim} · ${sala}${tail} — Clique para detalhes`
+}
+
 /** Lista de ISO dates de start a end inclusive (ordem crescente). */
 export function eachDateISOInRange(startISO, endISO) {
   const out = []
