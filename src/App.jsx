@@ -585,7 +585,7 @@ export default function App() {
                                 autoComplete="organization"
                                 className="form__textarea form__textarea--panel-inset"
                                 placeholder="Um ou vários nomes (várias linhas)"
-                                rows={3}
+                                rows={2}
                                 value={form.nomeCliente}
                                 onChange={(e) => updateField('nomeCliente', e.target.value)}
                               />

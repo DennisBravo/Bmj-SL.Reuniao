@@ -871,8 +871,8 @@
   gap: 16px 24px;
   align-items: stretch;
   width: 100%;
-  /* Altura mínima estável: alternar Interna/Externa não desloca o bloco seguinte */
-  min-height: clamp(15.5rem, 28vh, 19rem);
+  /* Altura mínima estável (ajustada após redução dos textareas) */
+  min-height: clamp(12.5rem, 22vh, 16.5rem);
 }
 
 @media (max-width: 900px) {
@@ -925,7 +925,7 @@
 }
 
 .form__tipo-participantes-cell--part .form__panel > .m365-ac-wrap--textarea {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-height: 0;
 }
 
@@ -959,11 +959,9 @@
   color: #6b7287;
 }
 
-/* Participantes: ver também regra após `.form textarea` (especificidade) */
+/* Participantes: altura alinhada à regra partilhada com panel-inset (abaixo) */
 .form__textarea--participantes-compact {
-  flex: 1 1 auto;
-  resize: vertical;
-  overflow-y: auto;
+  flex: 0 0 auto;
   line-height: 1.45;
 }
 
@@ -1049,8 +1047,7 @@
   gap: 6px;
   width: 100%;
   min-width: 0;
-  flex: 1 1 auto;
-  min-height: 0;
+  flex: 0 0 auto;
   margin-top: 2px;
   animation: formTipoClienteIn 0.16s ease-out;
 }
@@ -1141,14 +1138,21 @@
   resize: vertical;
 }
 
-/* Textareas brancas dentro dos painéis cinzentos (Participantes + Cliente) */
+/*
+ * Cliente + Participantes: ~2–3 linhas visíveis, altura fixa modesta, scroll interno.
+ * Mesmo padrão para ambos (sem crescimento automático que pese no layout).
+ */
 .form textarea.form__textarea--participantes-compact,
 .form textarea.form__textarea--panel-inset {
-  min-height: 7.5rem;
-  max-height: 22rem;
-  flex: 1 1 auto;
+  --form-panel-textarea-lines: 5.75rem;
+  height: var(--form-panel-textarea-lines);
+  min-height: var(--form-panel-textarea-lines);
+  max-height: var(--form-panel-textarea-lines);
+  flex: 0 0 auto;
   line-height: 1.45;
-  resize: vertical;
+  resize: none;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 /* Autocomplete Microsoft 365 (Graph) — alinhado aos demais campos do .form */
@@ -1162,7 +1166,7 @@
 .form .m365-ac-wrap--textarea {
   display: flex;
   flex-direction: column;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-height: 0;
   width: 100%;
 }
