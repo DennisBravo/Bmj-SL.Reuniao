@@ -60,6 +60,7 @@ export default function App() {
     observacoes: '',
   })
   const [formError, setFormError] = useState('')
+  const [saveSuccess, setSaveSuccess] = useState(false)
   const [cancelTarget, setCancelTarget] = useState(null)
   const [editTarget, setEditTarget] = useState(null)
 
@@ -72,6 +73,12 @@ export default function App() {
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [loading])
+
+  useEffect(() => {
+    if (!saveSuccess) return
+    const t = window.setTimeout(() => setSaveSuccess(false), 5000)
+    return () => window.clearTimeout(t)
+  }, [saveSuccess])
 
   const reservationsForDay = useMemo(
     () => reservations.filter((r) => reservationCoversDate(r, selectedDate)),
@@ -99,12 +106,14 @@ export default function App() {
   function updateField(key, value) {
     setForm((f) => ({ ...f, [key]: value }))
     setFormError('')
+    setSaveSuccess(false)
     clearError()
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
     setFormError('')
+    setSaveSuccess(false)
     clearError()
 
     const titulo = form.titulo.trim()
@@ -201,6 +210,7 @@ export default function App() {
         participantes: '',
         observacoes: '',
       }))
+      setSaveSuccess(true)
     } catch {
       setFormError('Não foi possível guardar a reserva. Tente novamente ou verifique a ligação ao servidor.')
     }
@@ -243,6 +253,7 @@ export default function App() {
               onChange={(e) => {
                 setSelectedDate(e.target.value)
                 setFormError('')
+                setSaveSuccess(false)
                 clearError()
               }}
             />
@@ -333,6 +344,11 @@ export default function App() {
                 e data.
               </p>
               <form className="form" onSubmit={handleSubmit}>
+                {saveSuccess ? (
+                  <p className="form__success" role="status" aria-live="polite">
+                    Reserva criada com sucesso.
+                  </p>
+                ) : null}
                 {formError ? <p className="form__error">{formError}</p> : null}
 
                 <div className="form__row">
@@ -356,7 +372,10 @@ export default function App() {
                     id="data"
                     type="date"
                     value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
+                    onChange={(e) => {
+                      setSelectedDate(e.target.value)
+                      setSaveSuccess(false)
+                    }}
                   />
                 </div>
 
