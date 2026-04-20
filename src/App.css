@@ -989,6 +989,11 @@
   transform: translateY(1cm);
 }
 
+/* Só tipo (Externa): deslocar «Gerir clientes» ~1 cm para baixo. */
+.form__tipo-participantes-cell--tipo .form__tipo-fieldset--compact > .form__panel-edit-btn {
+  transform: translateY(1cm);
+}
+
 .form__panel--error {
   border-color: var(--danger);
   box-shadow: 0 0 0 1px rgba(181, 71, 71, 0.18);
