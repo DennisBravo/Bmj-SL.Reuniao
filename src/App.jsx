@@ -612,75 +612,74 @@ export default function App() {
                 <div className="form__tipo-participantes-row" aria-label="Tipo e participantes">
                   <div className="form__tipo-participantes-cell form__tipo-participantes-cell--tipo">
                     <div
-                      className={`form__panel${fieldHighlight.tipo || fieldHighlight.nomeCliente ? ' form__panel--error' : ''}`}
+                      className={`form__panel form__panel--stack${fieldHighlight.tipo || fieldHighlight.nomeCliente ? ' form__panel--error' : ''}`}
                     >
                       <fieldset
-                        className={`form__tipo-fieldset${fieldHighlight.tipo ? ' form__tipo-fieldset--error' : ''}`}
+                        className={`form__tipo-fieldset form__tipo-fieldset--compact${fieldHighlight.tipo ? ' form__tipo-fieldset--error' : ''}`}
                       >
                         <legend className="form__tipo-legend">Tipo de reunião</legend>
-                        <div className="form__tipo-row">
-                          <div className="form__tipo-options" role="presentation">
-                            <label className="form__tipo-label">
-                              <input
-                                type="radio"
-                                name="tipoReuniao"
-                                value="interna"
-                                checked={form.tipoReuniao === 'interna'}
-                                onChange={() => updateField('tipoReuniao', 'interna')}
-                              />
-                              Interna
-                            </label>
-                            <label className="form__tipo-label">
-                              <input
-                                type="radio"
-                                name="tipoReuniao"
-                                value="externa"
-                                checked={form.tipoReuniao === 'externa'}
-                                onChange={() => updateField('tipoReuniao', 'externa')}
-                              />
-                              Externa
-                            </label>
-                          </div>
-                          {form.tipoReuniao === 'externa' ? (
-                            <div
-                              className={`form__tipo-cliente-summary${fieldHighlight.nomeCliente ? ' form__tipo-cliente-summary--error' : ''}`}
-                            >
-                              <p className="form__panel-summary" aria-live="polite">
-                                {clientesResumoLabel(form.nomeCliente)}
-                              </p>
-                              <button
-                                type="button"
-                                className="btn btn--secondary form__panel-edit-btn"
-                                onClick={openClienteModal}
-                              >
-                                Gerir clientes
-                              </button>
-                            </div>
-                          ) : null}
+                        <div className="form__tipo-options" role="presentation">
+                          <label className="form__tipo-label">
+                            <input
+                              type="radio"
+                              name="tipoReuniao"
+                              value="interna"
+                              checked={form.tipoReuniao === 'interna'}
+                              onChange={() => updateField('tipoReuniao', 'interna')}
+                            />
+                            Interna
+                          </label>
+                          <label className="form__tipo-label">
+                            <input
+                              type="radio"
+                              name="tipoReuniao"
+                              value="externa"
+                              checked={form.tipoReuniao === 'externa'}
+                              onChange={() => updateField('tipoReuniao', 'externa')}
+                            />
+                            Externa
+                          </label>
                         </div>
+                        {form.tipoReuniao === 'externa' ? (
+                          <button
+                            type="button"
+                            className="btn-ghost form__panel-edit-btn"
+                            onClick={openClienteModal}
+                          >
+                            Gerir clientes
+                          </button>
+                        ) : null}
+                        {form.tipoReuniao === 'externa' ? (
+                          <p
+                            className={`form__panel-summary form__panel-summary--sub${fieldHighlight.nomeCliente ? ' form__panel-summary--error' : ''}`}
+                            aria-live="polite"
+                          >
+                            {clientesResumoLabel(form.nomeCliente)}
+                          </p>
+                        ) : null}
                       </fieldset>
                     </div>
                   </div>
                   <div
                     className={`form__tipo-participantes-cell form__tipo-participantes-cell--part${fieldHighlight.participantes ? ' form__tipo-participantes-cell--error' : ''}`}
                   >
-                    <div className={`form__panel${fieldHighlight.participantes ? ' form__panel--error' : ''}`}>
-                      <div className="form__panel__legend">Participantes (só e-mails)</div>
-                      <div className="form__panel-summary-row">
-                        <p className="form__panel-summary" aria-live="polite">
-                          {participantesResumoLabel(form.participantes)}
-                        </p>
+                    <div className={`form__panel form__panel--stack${fieldHighlight.participantes ? ' form__panel--error' : ''}`}>
+                      <div className="form__panel-head">
+                        <span className="form__panel__legend">Participantes (só e-mails)</span>
                         <button
                           type="button"
-                          className="btn btn--secondary form__panel-edit-btn"
+                          className="btn-ghost form__panel-edit-btn"
                           onClick={openParticipantesModal}
                         >
                           Gerir participantes
                         </button>
                       </div>
-                      <span className="hint form__field-hint form__participantes-hint">
-                        Só e-mails válidos. Convites se o calendário estiver configurado no servidor.
-                      </span>
+                      <p
+                        className={`form__panel-summary form__panel-summary--sub${fieldHighlight.participantes ? ' form__panel-summary--error' : ''}`}
+                        aria-live="polite"
+                      >
+                        {participantesResumoLabel(form.participantes)}
+                      </p>
                     </div>
                   </div>
                 </div>
