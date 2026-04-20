@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { reservationTipoReuniao } from '../reservasUtils'
 
 export default function ReservaSlotDetalheModal({ reservation, onClose }) {
   useEffect(() => {
@@ -32,6 +33,18 @@ export default function ReservaSlotDetalheModal({ reservation, onClose }) {
         </p>
 
         <div className="app__modal-field app__modal-field--readonly">
+          <span className="app__modal-static-label">Tipo de reunião</span>
+          <p className="app__modal-static-value">
+            {reservationTipoReuniao(r) === 'externa' ? 'Externa' : 'Interna'}
+          </p>
+        </div>
+        {reservationTipoReuniao(r) === 'externa' && r.nomeCliente?.trim() ? (
+          <div className="app__modal-field app__modal-field--readonly">
+            <span className="app__modal-static-label">Nome do cliente</span>
+            <p className="app__modal-static-value">{r.nomeCliente.trim()}</p>
+          </div>
+        ) : null}
+        <div className="app__modal-field app__modal-field--readonly">
           <span className="app__modal-static-label">Título</span>
           <p className="app__modal-static-value">{r.titulo || '—'}</p>
         </div>
@@ -48,7 +61,7 @@ export default function ReservaSlotDetalheModal({ reservation, onClose }) {
           <p className="app__modal-static-value">{r.emailSolicitante || r.createdByEmail || '—'}</p>
         </div>
         <div className="app__modal-field app__modal-field--readonly">
-          <span className="app__modal-static-label">Participantes</span>
+          <span className="app__modal-static-label">Participantes (e-mails)</span>
           <p className="app__modal-static-value app__modal-static-value--multiline">
             {r.participantes?.trim() ? r.participantes : '—'}
           </p>

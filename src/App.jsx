@@ -13,6 +13,8 @@ import {
   findReservationConflictRange,
   findReservationForSlot,
   reservationQuickSummaryLine,
+  validateParticipantesEmailsOnly,
+  reservationTipoReuniao,
 } from './reservasUtils'
 import { useReservas } from './ReservasContext.jsx'
 import BmjLogo from './components/BmjLogo.jsx'
@@ -48,8 +50,15 @@ export default function App() {
     emailSolicitante: '',
     participantes: '',
     observacoes: '',
+    tipoReuniao: '',
+    nomeCliente: '',
   })
   const [formError, setFormError] = useState('')
+  const [fieldHighlight, setFieldHighlight] = useState({
+    tipo: false,
+    nomeCliente: false,
+    participantes: false,
+  })
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [detalheReserva, setDetalheReserva] = useState(null)
   const [slotHoverPreview, setSlotHoverPreview] = useState(null)
@@ -114,10 +123,20 @@ export default function App() {
   }
 
   function updateField(key, value) {
-    setForm((f) => ({ ...f, [key]: value }))
+    setForm((f) => {
+      const next = { ...f, [key]: value }
+      if (key === 'tipoReuniao' && value === 'interna') next.nomeCliente = ''
+      return next
+    })
     setFormError('')
     setSaveSuccess(false)
     clearError()
+    setFieldHighlight((h) => ({
+      ...h,
+      ...(key === 'tipoReuniao' ? { tipo: false } : {}),
+      ...(key === 'nomeCliente' ? { nomeCliente: false } : {}),
+      ...(key === 'participantes' ? { participantes: false } : {}),
+    }))
   }
 
   async function handleSubmit(e) {
@@ -125,6 +144,24 @@ export default function App() {
     setFormError('')
     setSaveSuccess(false)
     clearError()
+    setFieldHighlight({ tipo: false, nomeCliente: false, participantes: false })
+
+    if (form.tipoReuniao !== 'interna' && form.tipoReuniao !== 'externa') {
+      setFormError('Selecione o tipo de reunião (interna ou externa) antes de continuar.')
+      setFieldHighlight((h) => ({ ...h, tipo: true }))
+      return
+    }
+    if (form.tipoReuniao === 'externa' && !form.nomeCliente.trim()) {
+      setFormError('Informe o nome do cliente.')
+      setFieldHighlight((h) => ({ ...h, nomeCliente: true }))
+      return
+    }
+    const partCheck = validateParticipantesEmailsOnly(form.participantes)
+    if (!partCheck.ok) {
+      setFormError(partCheck.error)
+      setFieldHighlight((h) => ({ ...h, participantes: true }))
+      return
+    }
 
     const titulo = form.titulo.trim()
     const solicitante = form.solicitante.trim()
@@ -183,6 +220,7 @@ export default function App() {
     const createdByEmail =
       normalizeEmail(getCurrentUserEmail() || emailSolicitante) || normalizeEmail(emailSolicitante)
     const observacoes = form.observacoes.trim()
+    const participantesNorm = partCheck.emails.join('\n')
     const novo = {
       id: crypto.randomUUID(),
       sala: form.sala,
@@ -193,7 +231,9 @@ export default function App() {
       titulo,
       solicitante,
       emailSolicitante,
-      participantes: form.participantes.trim(),
+      tipoReuniao: form.tipoReuniao,
+      ...(form.tipoReuniao === 'externa' ? { nomeCliente: form.nomeCliente.trim() } : {}),
+      participantes: participantesNorm,
       observacoes,
       criadoEm: now,
       createdAt: now,
@@ -213,12 +253,16 @@ export default function App() {
         solicitante: novo.solicitante,
         participantes: novo.participantes,
         observacoes: novo.observacoes,
+        tipoReuniao: novo.tipoReuniao,
+        nomeCliente: novo.nomeCliente,
       })
       setForm((f) => ({
         ...f,
         titulo: '',
         participantes: '',
         observacoes: '',
+        tipoReuniao: '',
+        nomeCliente: '',
       }))
       setSaveSuccess(true)
     } catch {
@@ -301,12 +345,16 @@ export default function App() {
                 Disponível
               </span>
               <span className="legend__item">
-                <span className="legend__swatch legend__swatch--busy" aria-hidden />
-                Ocupado
+                <span className="legend__swatch legend__swatch--interna" aria-hidden />
+                Interna
+              </span>
+              <span className="legend__item">
+                <span className="legend__swatch legend__swatch--externa" aria-hidden />
+                Externa
               </span>
               <span className="legend__item">Slots de {SLOT_MINUTES} min</span>
               <span className="legend__item legend__item--hint">
-                Ocupado: passe o rato ou clique para ver a reserva
+                Passe o rato ou clique num horário reservado para ver detalhes
               </span>
             </div>
             <div className="grid-wrap">
@@ -332,13 +380,19 @@ export default function App() {
                       {TIME_SLOTS.map((slot) => {
                         const res = getSlotReservation(sala, slot.startMin, slot.endMin)
                         const busy = res != null
+                        const tipoSlot = busy ? reservationTipoReuniao(res) : null
+                        const slotClass = busy
+                          ? tipoSlot === 'externa'
+                            ? 'slot slot--busy-externa'
+                            : 'slot slot--busy-interna'
+                          : 'slot slot--free'
                         const slotTitle = busy
                           ? reservationQuickSummaryLine(res, sala)
                           : `${sala} · ${slot.label}–${minutesToTime(slot.endMin)} · Disponível`
                         return (
                           <td key={slot.startMin}>
                             <div
-                              className={`slot ${busy ? 'slot--busy' : 'slot--free'}`}
+                              className={slotClass}
                               title={slotTitle}
                               role="img"
                               aria-label={
@@ -482,14 +536,71 @@ export default function App() {
                       />
                     </div>
 
-                    <div className="form__row">
-                      <label htmlFor="participantes">Participantes</label>
+                    <fieldset
+                      className={`form__tipo-fieldset${fieldHighlight.tipo ? ' form__tipo-fieldset--error' : ''}`}
+                    >
+                      <legend className="form__tipo-legend">Tipo de reunião</legend>
+                      <p className="hint form__tipo-hint">
+                        Obrigatório. A cor na grade segue o tipo (interna ou externa).
+                      </p>
+                      <div className="form__tipo-options">
+                        <label className="form__tipo-label">
+                          <input
+                            type="radio"
+                            name="tipoReuniao"
+                            value="interna"
+                            checked={form.tipoReuniao === 'interna'}
+                            onChange={() => updateField('tipoReuniao', 'interna')}
+                          />
+                          Interna
+                        </label>
+                        <label className="form__tipo-label">
+                          <input
+                            type="radio"
+                            name="tipoReuniao"
+                            value="externa"
+                            checked={form.tipoReuniao === 'externa'}
+                            onChange={() => updateField('tipoReuniao', 'externa')}
+                          />
+                          Externa
+                        </label>
+                      </div>
+                    </fieldset>
+
+                    {form.tipoReuniao === 'externa' ? (
+                      <div
+                        className={`form__row${fieldHighlight.nomeCliente ? ' form__row--error' : ''}`}
+                      >
+                        <label htmlFor="nomeCliente">Nome do cliente</label>
+                        <input
+                          id="nomeCliente"
+                          type="text"
+                          autoComplete="organization"
+                          placeholder="Um ou vários nomes (texto livre)"
+                          value={form.nomeCliente}
+                          onChange={(e) => updateField('nomeCliente', e.target.value)}
+                        />
+                        <span className="hint form__field-hint">
+                          Obrigatório para reunião externa.
+                        </span>
+                      </div>
+                    ) : null}
+
+                    <div
+                      className={`form__row${fieldHighlight.participantes ? ' form__row--error' : ''}`}
+                    >
+                      <label htmlFor="participantes">Participantes (só e-mails)</label>
                       <textarea
                         id="participantes"
-                        placeholder="Nomes ou e-mails, um por linha"
+                        className="form__textarea"
+                        placeholder="Um e-mail por linha ou separados por vírgula (convites de calendário)"
                         value={form.participantes}
                         onChange={(e) => updateField('participantes', e.target.value)}
                       />
+                      <span className="hint form__field-hint">
+                        Apenas endereços válidos. Os convites são enviados para estes e-mails quando o
+                        calendário estiver configurado no servidor.
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -537,6 +648,11 @@ export default function App() {
           <strong className="slot-preview-popover__title">
             {slotHoverPreview.reservation.titulo || 'Reunião'}
           </strong>
+          <span className="slot-preview-popover__tipo">
+            {reservationTipoReuniao(slotHoverPreview.reservation) === 'externa'
+              ? 'Reunião externa'
+              : 'Reunião interna'}
+          </span>
           <span className="slot-preview-popover__meta">
             {slotHoverPreview.reservation.horaInicio}–{slotHoverPreview.reservation.horaFim} ·{' '}
             {slotHoverPreview.reservation.sala}

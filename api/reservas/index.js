@@ -171,7 +171,108 @@ function buildListFields(body) {
   if (body.observacoes != null) fields.Observacao = String(body.observacoes).trim()
   if (body.status != null) fields.Status = String(body.status).trim()
   if (!body._patch) fields.CriadoVia = 'App Web'
+
+  // Colunas opcionais na lista SharePoint: TipoReuniao (Escolha: Interna | Externa), NomeCliente (Texto).
+  // Defina SHAREPOINT_SKIP_TIPO_FIELDS=1 se a lista ainda não tiver estes campos.
+  const skipTipo = process.env.SHAREPOINT_SKIP_TIPO_FIELDS === '1'
+  if (!skipTipo && body.tipoReuniao != null && String(body.tipoReuniao).trim() !== '') {
+    const tr = String(body.tipoReuniao).trim().toLowerCase() === 'externa' ? 'Externa' : 'Interna'
+    fields.TipoReuniao = tr
+  }
+  if (
+    !skipTipo &&
+    String(body.tipoReuniao || '')
+      .trim()
+      .toLowerCase() === 'externa' &&
+    body.nomeCliente != null &&
+    String(body.nomeCliente).trim() !== ''
+  ) {
+    fields.NomeCliente = String(body.nomeCliente).trim()
+  }
+
   return fields
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+/**
+ * Cria evento no calendário do organizador e envia convites aos e-mails em `participantes`.
+ * Requer permissão de aplicação Calendars.ReadWrite e variável GRAPH_CALENDAR_ORGANIZER_UPN (UPN ou ID do utilizador).
+ */
+async function tryCreateCalendarInvite(context, token, body) {
+  const organizer = (process.env.GRAPH_CALENDAR_ORGANIZER_UPN || '').trim()
+  if (!organizer) {
+    context.log.info(
+      '[calendar] GRAPH_CALENDAR_ORGANIZER_UPN não definido — evento Outlook/convites não criados.',
+    )
+    return
+  }
+  const tz = (process.env.RESERVA_CALENDAR_TIMEZONE || 'America/Sao_Paulo').trim()
+  const raw = body.participantes != null ? String(body.participantes) : ''
+  const parts = raw.split(/[\r\n,;]+/).map((x) => x.trim()).filter(Boolean)
+  const emailRe = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/i
+  const attendees = []
+  const seen = new Set()
+  for (const p of parts) {
+    if (!emailRe.test(p)) continue
+    const k = p.toLowerCase()
+    if (seen.has(k)) continue
+    seen.add(k)
+    attendees.push({ emailAddress: { address: p }, type: 'required' })
+  }
+  if (attendees.length === 0) {
+    context.log.info('[calendar] Sem e-mails em Participantes — evento não criado.')
+    return
+  }
+
+  const dateStart = String(body.date || '').trim()
+  const dateEnd = (body.dateFim && String(body.dateFim).trim()) || dateStart
+  const startHm = String(body.horaInicio || '09:00').trim()
+  const endHm = String(body.horaFim || '10:00').trim()
+  const startDateTime = `${dateStart}T${startHm.length === 5 ? startHm : '09:00'}:00`
+  const endDateTime = `${dateStart}T${endHm.length === 5 ? endHm : '10:00'}:00`
+
+  const tipo =
+    String(body.tipoReuniao || '')
+      .trim()
+      .toLowerCase() === 'externa'
+      ? 'Externa'
+      : 'Interna'
+  const nomeCliente = body.nomeCliente != null ? String(body.nomeCliente).trim() : ''
+  let html = `<p><b>Sala:</b> ${escapeHtml(String(body.sala || ''))}</p>`
+  html += `<p><b>Tipo de reunião:</b> ${escapeHtml(tipo)}</p>`
+  if (nomeCliente) html += `<p><b>Nome do cliente:</b> ${escapeHtml(nomeCliente)}</p>`
+  if (body.observacoes) html += `<p><b>Observações:</b><br/>${escapeHtml(String(body.observacoes))}</p>`
+  html += `<p><b>Solicitante:</b> ${escapeHtml(String(body.solicitante || ''))} (${escapeHtml(String(body.emailSolicitante || ''))})</p>`
+
+  const subject = `${String(body.titulo || 'Reserva').slice(0, 200)} — ${String(body.sala || '')}`
+
+  const eventPayload = {
+    subject,
+    body: { contentType: 'HTML', content: html },
+    start: { dateTime: startDateTime, timeZone: tz },
+    end: { dateTime: endDateTime, timeZone: tz },
+    location: { displayName: String(body.sala || '') },
+    attendees,
+    isOnlineMeeting: false,
+  }
+
+  if (dateEnd > dateStart) {
+    eventPayload.recurrence = {
+      pattern: { type: 'daily', interval: 1 },
+      range: { type: 'endDate', startDate: dateStart, endDate: dateEnd },
+    }
+  }
+
+  const url = `${GRAPH_BASE}/users/${encodeURIComponent(organizer)}/calendar/events`
+  await graphPostJson(url, token, eventPayload)
+  context.log.info(`[calendar] Evento criado; convites para ${attendees.length} participante(s).`)
 }
 
 function parseRequestBody(req) {
@@ -218,6 +319,14 @@ module.exports = async function (context, req) {
         listId,
       )}/items`
       const created = await graphPostJson(url, token, { fields })
+      try {
+        await tryCreateCalendarInvite(context, token, body)
+      } catch (calErr) {
+        context.log.warn(
+          '[calendar] Reserva criada na lista, mas falha ao criar evento/convites: ' +
+            (calErr.message || String(calErr)),
+        )
+      }
       jsonRes(context, 201, {
         id: created.id,
         eTag: created.eTag,

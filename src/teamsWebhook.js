@@ -14,9 +14,13 @@ export async function notifyTeamsNewReservationWithNotes(payload) {
       ? `${payload.date} → ${payload.dateFim}`
       : payload.date
 
+  const tipo = String(payload.tipoReuniao || '').toLowerCase() === 'externa' ? 'Externa' : 'Interna'
+  const cliente = String(payload.nomeCliente || '').trim()
   const text = [
     '**Nova reserva — observações / necessidades**',
     '',
+    `**Tipo:** ${tipo}`,
+    cliente ? `**Cliente:** ${cliente}` : null,
     `**Sala:** ${payload.sala}`,
     `**Data:** ${periodo}`,
     `**Horário:** ${payload.horaInicio} – ${payload.horaFim}`,
@@ -24,7 +28,9 @@ export async function notifyTeamsNewReservationWithNotes(payload) {
     `**Participantes:** ${payload.participantes?.trim() ? payload.participantes.trim().replace(/\r?\n/g, ', ') : '—'}`,
     '',
     `**Observações:** ${observacoes}`,
-  ].join('\n')
+  ]
+    .filter(Boolean)
+    .join('\n')
 
   try {
     await fetch(url, {

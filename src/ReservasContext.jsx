@@ -20,6 +20,8 @@ function emailFromSharePointFields(f) {
 function graphListItemToReservation(item) {
   const f = item.fields || {}
   const email = emailFromSharePointFields(f)
+  const tipoRaw = (f.TipoReuniao != null ? String(f.TipoReuniao) : '').trim().toLowerCase()
+  const tipoReuniao = tipoRaw === 'externa' ? 'externa' : 'interna'
   return {
     graphItemId: String(item.id),
     id: f.ReservaID || String(item.id),
@@ -34,6 +36,8 @@ function graphListItemToReservation(item) {
     horaFimMin: f.HoraFimMinutos ? Number(f.HoraFimMinutos) : undefined,
     solicitante: f.NomedoSolicitante || '',
     emailSolicitante: email,
+    tipoReuniao,
+    nomeCliente: f.NomeCliente != null ? String(f.NomeCliente).trim() : '',
     participantes: f.ParticipantesTexto || '',
     observacoes: f.Observacao || '',
     status: f.Status || 'ativo',

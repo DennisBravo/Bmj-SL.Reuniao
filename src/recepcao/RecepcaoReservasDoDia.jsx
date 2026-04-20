@@ -66,6 +66,16 @@ export default function RecepcaoReservasDoDia() {
                   </div>
                   <div className="reservation-card__title">{r.titulo}</div>
                   <div className="reservation-card__meta">
+                    Tipo:{' '}
+                    {String(r.tipoReuniao || '').toLowerCase() === 'externa' ? 'Externa' : 'Interna'}
+                    {r.nomeCliente?.trim() &&
+                    String(r.tipoReuniao || '').toLowerCase() === 'externa' ? (
+                      <>
+                        <br />
+                        Cliente: {r.nomeCliente.trim()}
+                      </>
+                    ) : null}
+                    <br />
                     Responsável: {r.solicitante}
                     {r.emailSolicitante ? (
                       <>

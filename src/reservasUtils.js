@@ -123,6 +123,42 @@ export function isReservationActive(r) {
   return r && !r.deletedAt
 }
 
+/** `interna` | `externa` (reservas antigas sem campo → interna). */
+export function reservationTipoReuniao(r) {
+  const t = String(r?.tipoReuniao ?? '').toLowerCase()
+  return t === 'externa' ? 'externa' : 'interna'
+}
+
+/** Normaliza lista de e-mails: quebras de linha, vírgulas ou ponto e vírgula. */
+export function splitParticipantesEmails(raw) {
+  const s = String(raw ?? '').trim()
+  if (!s) return []
+  const parts = s.split(/[\r\n,;]+/).map((x) => x.trim()).filter(Boolean)
+  const seen = new Set()
+  const out = []
+  for (const p of parts) {
+    const k = p.toLowerCase()
+    if (seen.has(k)) continue
+    seen.add(k)
+    out.push(p)
+  }
+  return out
+}
+
+/** Participantes só com e-mails válidos (lista pode estar vazia). */
+export function validateParticipantesEmailsOnly(raw) {
+  const list = splitParticipantesEmails(raw)
+  for (const em of list) {
+    if (!isValidEmail(em)) {
+      return {
+        ok: false,
+        error: `Participantes: “${em}” não é um e-mail válido. Use só e-mails, um por linha ou separados por vírgula.`,
+      }
+    }
+  }
+  return { ok: true, emails: list }
+}
+
 export function migrateReservation(r) {
   if (!r || typeof r !== 'object') return r
   const createdAt = r.createdAt || r.criadoEm || new Date().toISOString()
@@ -131,6 +167,8 @@ export function migrateReservation(r) {
     .toLowerCase()
   return {
     ...r,
+    tipoReuniao: reservationTipoReuniao(r),
+    nomeCliente: r.nomeCliente != null ? String(r.nomeCliente).trim() : '',
     observacoes: r.observacoes != null ? String(r.observacoes) : '',
     createdByEmail,
     createdAt,
@@ -181,10 +219,11 @@ export function findReservationForSlot(reservations, sala, slotStart, slotEnd) {
 
 /** Uma linha para tooltip nativo / pré-visualização rápida. */
 export function reservationQuickSummaryLine(r, sala) {
+  const tipo = reservationTipoReuniao(r) === 'externa' ? 'Ext' : 'Int'
   const tit = (r.titulo || 'Reunião').trim().slice(0, 72)
   const sol = (r.solicitante || '').trim().slice(0, 40)
   const tail = sol ? ` · ${sol}` : ''
-  return `${tit} · ${r.horaInicio}–${r.horaFim} · ${sala}${tail} — Clique para detalhes`
+  return `${tipo} · ${tit} · ${r.horaInicio}–${r.horaFim} · ${sala}${tail} — Clique para detalhes`
 }
 
 /** Lista de ISO dates de start a end inclusive (ordem crescente). */
