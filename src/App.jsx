@@ -15,14 +15,14 @@ import {
   reservationQuickSummaryLine,
   validateParticipantesEmailsOnly,
   reservationTipoReuniao,
+  participantesResumoLabel,
+  clientesResumoLabel,
 } from './reservasUtils'
 import { useReservas } from './ReservasContext.jsx'
 import BmjLogo from './components/BmjLogo.jsx'
 import ReservaSlotDetalheModal from './components/ReservaSlotDetalheModal.jsx'
-import {
-  M365EmailAutocomplete,
-  M365ParticipantesAutocomplete,
-} from './components/M365UserAutocompleteFields.jsx'
+import { M365EmailAutocomplete, M365ParticipantesAutocomplete } from './components/M365UserAutocompleteFields.jsx'
+import ReservaFormTextModal from './components/ReservaFormTextModal.jsx'
 import { getCurrentUserEmail, normalizeEmail } from './envConfig.js'
 import { notifyTeamsNewReservationWithNotes } from './teamsWebhook.js'
 import './App.css'
@@ -67,6 +67,14 @@ export default function App() {
   const [detalheReserva, setDetalheReserva] = useState(null)
   const [slotHoverPreview, setSlotHoverPreview] = useState(null)
   const hoverHideTimerRef = useRef(null)
+  const prevTipoReuniaoRef = useRef(form.tipoReuniao)
+
+  const [participantesModalOpen, setParticipantesModalOpen] = useState(false)
+  const [participantesDraft, setParticipantesDraft] = useState('')
+  const [participantesModalError, setParticipantesModalError] = useState('')
+
+  const [clienteModalOpen, setClienteModalOpen] = useState(false)
+  const [clienteDraft, setClienteDraft] = useState('')
 
   const cancelHoverHide = useCallback(() => {
     if (hoverHideTimerRef.current) {
@@ -108,6 +116,30 @@ export default function App() {
     setDetalheReserva(null)
   }, [form.dataInicio, cancelHoverHide])
 
+  /** Ao escolher «Externa», abre o modal de clientes (rascunho = valor actual). */
+  useEffect(() => {
+    const prev = prevTipoReuniaoRef.current
+    prevTipoReuniaoRef.current = form.tipoReuniao
+    if (form.tipoReuniao !== 'externa' || prev === 'externa') return
+    setClienteDraft(form.nomeCliente)
+    setClienteModalOpen(true)
+  }, [form.tipoReuniao, form.nomeCliente])
+
+  useEffect(() => {
+    if (!participantesModalOpen && !clienteModalOpen) return
+    function onKeyDown(e) {
+      if (e.key !== 'Escape') return
+      if (participantesModalOpen) {
+        setParticipantesModalOpen(false)
+        setParticipantesModalError('')
+        return
+      }
+      if (clienteModalOpen) setClienteModalOpen(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [participantesModalOpen, clienteModalOpen])
+
   function handleBusySlotEnter(e, res) {
     cancelHoverHide()
     const rect = e.currentTarget.getBoundingClientRect()
@@ -147,6 +179,42 @@ export default function App() {
       ...(key === 'nomeCliente' ? { nomeCliente: false } : {}),
       ...(key === 'participantes' ? { participantes: false } : {}),
     }))
+  }
+
+  function openParticipantesModal() {
+    setParticipantesDraft(form.participantes)
+    setParticipantesModalError('')
+    setParticipantesModalOpen(true)
+  }
+
+  function confirmParticipantesModal() {
+    const check = validateParticipantesEmailsOnly(participantesDraft)
+    if (!check.ok) {
+      setParticipantesModalError(check.error)
+      return
+    }
+    updateField('participantes', participantesDraft)
+    setParticipantesModalOpen(false)
+    setParticipantesModalError('')
+  }
+
+  function cancelParticipantesModal() {
+    setParticipantesModalOpen(false)
+    setParticipantesModalError('')
+  }
+
+  function openClienteModal() {
+    setClienteDraft(form.nomeCliente)
+    setClienteModalOpen(true)
+  }
+
+  function confirmClienteModal() {
+    updateField('nomeCliente', clienteDraft)
+    setClienteModalOpen(false)
+  }
+
+  function cancelClienteModal() {
+    setClienteModalOpen(false)
   }
 
   async function handleSubmit(e) {
@@ -575,20 +643,18 @@ export default function App() {
                           </div>
                           {form.tipoReuniao === 'externa' ? (
                             <div
-                              className={`form__tipo-cliente${fieldHighlight.nomeCliente ? ' form__tipo-cliente--error' : ''}`}
+                              className={`form__tipo-cliente-summary${fieldHighlight.nomeCliente ? ' form__tipo-cliente-summary--error' : ''}`}
                             >
-                              <label className="form__tipo-cliente-label" htmlFor="nomeCliente">
-                                Cliente
-                              </label>
-                              <textarea
-                                id="nomeCliente"
-                                autoComplete="organization"
-                                className="form__textarea form__textarea--panel-inset"
-                                placeholder="Um ou vários nomes (várias linhas)"
-                                rows={2}
-                                value={form.nomeCliente}
-                                onChange={(e) => updateField('nomeCliente', e.target.value)}
-                              />
+                              <p className="form__panel-summary" aria-live="polite">
+                                {clientesResumoLabel(form.nomeCliente)}
+                              </p>
+                              <button
+                                type="button"
+                                className="btn btn--secondary form__panel-edit-btn"
+                                onClick={openClienteModal}
+                              >
+                                Gerir clientes
+                              </button>
                             </div>
                           ) : null}
                         </div>
@@ -599,16 +665,19 @@ export default function App() {
                     className={`form__tipo-participantes-cell form__tipo-participantes-cell--part${fieldHighlight.participantes ? ' form__tipo-participantes-cell--error' : ''}`}
                   >
                     <div className={`form__panel${fieldHighlight.participantes ? ' form__panel--error' : ''}`}>
-                      <label className="form__panel__legend" htmlFor="participantes">
-                        Participantes (só e-mails)
-                      </label>
-                      <M365ParticipantesAutocomplete
-                        id="participantes"
-                        className="form__textarea form__textarea--participantes-compact"
-                        placeholder="Um por linha ou separados por vírgula"
-                        value={form.participantes}
-                        onValueChange={(v) => updateField('participantes', v)}
-                      />
+                      <div className="form__panel__legend">Participantes (só e-mails)</div>
+                      <div className="form__panel-summary-row">
+                        <p className="form__panel-summary" aria-live="polite">
+                          {participantesResumoLabel(form.participantes)}
+                        </p>
+                        <button
+                          type="button"
+                          className="btn btn--secondary form__panel-edit-btn"
+                          onClick={openParticipantesModal}
+                        >
+                          Gerir participantes
+                        </button>
+                      </div>
                       <span className="hint form__field-hint form__participantes-hint">
                         Só e-mails válidos. Convites se o calendário estiver configurado no servidor.
                       </span>
@@ -687,6 +756,48 @@ export default function App() {
           onClose={() => setDetalheReserva(null)}
         />
       ) : null}
+
+      <ReservaFormTextModal
+        open={participantesModalOpen}
+        title="Adicionar participantes"
+        titleId="reserva-modal-add-participantes-title"
+        error={participantesModalError}
+        onConfirm={confirmParticipantesModal}
+        onCancel={cancelParticipantesModal}
+      >
+        <div className="app__modal-field">
+          <label htmlFor="modal-participantes-field">E-mails (várias linhas ou separados por vírgula)</label>
+          <M365ParticipantesAutocomplete
+            id="modal-participantes-field"
+            className="form__textarea form__textarea--participantes-compact form__textarea--modal-body"
+            placeholder="Um por linha ou separados por vírgula"
+            value={participantesDraft}
+            onValueChange={setParticipantesDraft}
+          />
+        </div>
+      </ReservaFormTextModal>
+
+      <ReservaFormTextModal
+        open={clienteModalOpen}
+        title="Adicionar cliente(s)"
+        titleId="reserva-modal-add-clientes-title"
+        error=""
+        onConfirm={confirmClienteModal}
+        onCancel={cancelClienteModal}
+      >
+        <div className="app__modal-field">
+          <label htmlFor="modal-cliente-field">Nomes</label>
+          <textarea
+            id="modal-cliente-field"
+            autoComplete="organization"
+            className="form__textarea form__textarea--modal-body"
+            placeholder="Um ou vários nomes (várias linhas)"
+            rows={6}
+            value={clienteDraft}
+            onChange={(e) => setClienteDraft(e.target.value)}
+          />
+        </div>
+      </ReservaFormTextModal>
     </div>
   )
 }

@@ -202,6 +202,26 @@
   max-width: min(520px, 100vw - 2rem);
 }
 
+.app__modal--form-text {
+  max-width: min(520px, calc(100vw - 2rem));
+}
+
+.app__modal-inline-error {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  font-size: 0.8125rem;
+}
+
+/* Textareas grandes só dentro destes modais */
+.app__modal--form-text textarea.form__textarea--modal-body,
+.app__modal--form-text textarea.form__textarea--participantes-compact.form__textarea--modal-body {
+  min-height: 11rem !important;
+  height: auto !important;
+  max-height: min(50vh, 22rem);
+  width: 100%;
+  resize: vertical;
+}
+
 .app__modal-field--readonly {
   margin-bottom: 14px;
 }
@@ -871,7 +891,7 @@
   gap: 16px 24px;
   align-items: stretch;
   width: 100%;
-  min-height: clamp(9rem, 16vh, 12rem);
+  min-height: clamp(7.5rem, 12vh, 10rem);
 }
 
 @media (max-width: 900px) {
@@ -923,13 +943,43 @@
   box-sizing: border-box;
 }
 
-.form__tipo-participantes-cell--part .form__panel > .m365-ac-wrap--textarea {
-  flex: 0 0 auto;
-  min-height: 0;
-}
-
 .form__tipo-participantes-cell--part .form__panel .form__participantes-hint {
   margin-top: 0;
+}
+
+.form__panel-summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.form__tipo-cliente-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin-top: 2px;
+}
+
+.form__panel-summary {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.form__tipo-cliente-summary--error .form__panel-summary {
+  color: var(--danger);
+}
+
+.form__panel-edit-btn {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 8px 14px;
+  font-size: 0.8125rem;
 }
 
 .form__panel--error {
@@ -1056,42 +1106,6 @@
   outline-offset: 2px;
 }
 
-.form__tipo-cliente {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 4px;
-  width: 100%;
-  min-width: 0;
-  flex: 0 0 auto;
-  margin-top: 0;
-  animation: formTipoClienteIn 0.16s ease-out;
-}
-
-@keyframes formTipoClienteIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.form__tipo-cliente-label {
-  flex-shrink: 0;
-  font-size: 0.625rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: #6b7287;
-}
-
-/* Cliente usa .form__textarea--panel-inset (igual a Participantes) */
-
-.form__tipo-cliente--error .form__textarea--panel-inset {
-  border-color: var(--danger);
-  box-shadow: 0 0 0 1px rgba(181, 71, 71, 0.15);
-}
 
 .form__row--error .form__textarea,
 .form__row--error input:not([type='radio']):not([type='checkbox']) {

@@ -145,6 +145,27 @@ export function splitParticipantesEmails(raw) {
   return out
 }
 
+/** Nomes de cliente(s): linhas, vírgulas ou ponto e vírgula (sem deduplicar). */
+export function splitClienteNomes(raw) {
+  const s = String(raw ?? '').trim()
+  if (!s) return []
+  return s.split(/[\r\n,;]+/).map((x) => x.trim()).filter(Boolean)
+}
+
+/** Texto curto para o formulário após guardar participantes no modal. */
+export function participantesResumoLabel(raw) {
+  const n = splitParticipantesEmails(raw).length
+  if (n === 0) return 'Nenhum participante adicionado'
+  return `${n} participante${n === 1 ? '' : 's'} adicionado${n === 1 ? '' : 's'}`
+}
+
+/** Texto curto para o formulário após guardar clientes no modal. */
+export function clientesResumoLabel(raw) {
+  const n = splitClienteNomes(raw).length
+  if (n === 0) return 'Nenhum cliente adicionado'
+  return `${n} cliente${n === 1 ? '' : 's'} adicionado${n === 1 ? '' : 's'}`
+}
+
 /** Participantes só com e-mails válidos (lista pode estar vazia). */
 export function validateParticipantesEmailsOnly(raw) {
   const list = splitParticipantesEmails(raw)
