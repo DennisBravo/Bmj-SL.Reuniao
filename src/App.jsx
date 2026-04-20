@@ -540,51 +540,49 @@ export default function App() {
                       className={`form__tipo-fieldset${fieldHighlight.tipo ? ' form__tipo-fieldset--error' : ''}`}
                     >
                       <legend className="form__tipo-legend">Tipo de reunião</legend>
-                      <p className="hint form__tipo-hint">
-                        Obrigatório. A cor na grade segue o tipo (interna ou externa).
-                      </p>
-                      <div className="form__tipo-options">
-                        <label className="form__tipo-label">
-                          <input
-                            type="radio"
-                            name="tipoReuniao"
-                            value="interna"
-                            checked={form.tipoReuniao === 'interna'}
-                            onChange={() => updateField('tipoReuniao', 'interna')}
-                          />
-                          Interna
-                        </label>
-                        <label className="form__tipo-label">
-                          <input
-                            type="radio"
-                            name="tipoReuniao"
-                            value="externa"
-                            checked={form.tipoReuniao === 'externa'}
-                            onChange={() => updateField('tipoReuniao', 'externa')}
-                          />
-                          Externa
-                        </label>
+                      <div className="form__tipo-row">
+                        <div className="form__tipo-options" role="presentation">
+                          <label className="form__tipo-label">
+                            <input
+                              type="radio"
+                              name="tipoReuniao"
+                              value="interna"
+                              checked={form.tipoReuniao === 'interna'}
+                              onChange={() => updateField('tipoReuniao', 'interna')}
+                            />
+                            Interna
+                          </label>
+                          <label className="form__tipo-label">
+                            <input
+                              type="radio"
+                              name="tipoReuniao"
+                              value="externa"
+                              checked={form.tipoReuniao === 'externa'}
+                              onChange={() => updateField('tipoReuniao', 'externa')}
+                            />
+                            Externa
+                          </label>
+                        </div>
+                        {form.tipoReuniao === 'externa' ? (
+                          <div
+                            className={`form__tipo-cliente${fieldHighlight.nomeCliente ? ' form__tipo-cliente--error' : ''}`}
+                          >
+                            <label className="form__tipo-cliente-label" htmlFor="nomeCliente">
+                              Nome do cliente
+                            </label>
+                            <input
+                              id="nomeCliente"
+                              type="text"
+                              autoComplete="organization"
+                              className="form__tipo-cliente-input"
+                              placeholder="Um ou vários nomes"
+                              value={form.nomeCliente}
+                              onChange={(e) => updateField('nomeCliente', e.target.value)}
+                            />
+                          </div>
+                        ) : null}
                       </div>
                     </fieldset>
-
-                    {form.tipoReuniao === 'externa' ? (
-                      <div
-                        className={`form__row${fieldHighlight.nomeCliente ? ' form__row--error' : ''}`}
-                      >
-                        <label htmlFor="nomeCliente">Nome do cliente</label>
-                        <input
-                          id="nomeCliente"
-                          type="text"
-                          autoComplete="organization"
-                          placeholder="Um ou vários nomes (texto livre)"
-                          value={form.nomeCliente}
-                          onChange={(e) => updateField('nomeCliente', e.target.value)}
-                        />
-                        <span className="hint form__field-hint">
-                          Obrigatório para reunião externa.
-                        </span>
-                      </div>
-                    ) : null}
 
                     <div
                       className={`form__row${fieldHighlight.participantes ? ' form__row--error' : ''}`}

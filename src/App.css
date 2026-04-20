@@ -855,10 +855,11 @@
 
 .form__tipo-fieldset {
   margin: 0;
-  padding: 14px 16px;
+  padding: 6px 10px 8px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--surface-2);
+  max-width: 100%;
 }
 
 .form__tipo-fieldset--error {
@@ -867,40 +868,98 @@
 }
 
 .form__tipo-legend {
-  padding: 0 6px;
-  font-size: 0.6875rem;
+  padding: 0;
+  margin: 0 0 4px;
+  width: 100%;
+  font-size: 0.625rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #6b7287;
 }
 
-.form__tipo-hint {
-  margin: 0 0 10px !important;
-  font-size: 0.8125rem !important;
+.form__tipo-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
 }
 
 .form__tipo-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px 24px;
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .form__tipo-label {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.9375rem;
+  gap: 6px;
+  font-size: 0.875rem;
   font-weight: 500;
   color: var(--text);
   cursor: pointer;
 }
 
 .form__tipo-label input {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   accent-color: var(--primary);
   cursor: pointer;
+}
+
+.form__tipo-cliente {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 180px;
+  min-width: 0;
+  animation: formTipoClienteIn 0.16s ease-out;
+}
+
+@keyframes formTipoClienteIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.form__tipo-cliente-label {
+  flex-shrink: 0;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6b7287;
+  white-space: nowrap;
+}
+
+.form__tipo-cliente-input {
+  flex: 1 1 120px;
+  min-width: 0;
+  padding: 10px 12px;
+  min-height: 42px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.875rem;
+}
+
+.form__tipo-cliente-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-dim);
+}
+
+.form__tipo-cliente--error .form__tipo-cliente-input {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 1px rgba(181, 71, 71, 0.15);
 }
 
 .form__row--error .form__textarea,
