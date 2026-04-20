@@ -63,6 +63,17 @@ export default function App() {
   const [detalheReserva, setDetalheReserva] = useState(null)
   const [slotHoverPreview, setSlotHoverPreview] = useState(null)
   const hoverHideTimerRef = useRef(null)
+  const nomeClienteTextareaRef = useRef(null)
+
+  const adjustNomeClienteTextareaHeight = useCallback(() => {
+    const el = nomeClienteTextareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    const minPx = 96
+    const maxPx = 220
+    const next = Math.min(Math.max(el.scrollHeight, minPx), maxPx)
+    el.style.height = `${next}px`
+  }, [])
 
   const cancelHoverHide = useCallback(() => {
     if (hoverHideTimerRef.current) {
@@ -103,6 +114,12 @@ export default function App() {
     cancelHoverHide()
     setDetalheReserva(null)
   }, [form.dataInicio, cancelHoverHide])
+
+  useEffect(() => {
+    if (form.tipoReuniao !== 'externa') return
+    const id = requestAnimationFrame(() => adjustNomeClienteTextareaHeight())
+    return () => cancelAnimationFrame(id)
+  }, [form.tipoReuniao, form.nomeCliente, adjustNomeClienteTextareaHeight])
 
   function handleBusySlotEnter(e, res) {
     cancelHoverHide()
@@ -155,7 +172,7 @@ export default function App() {
       return
     }
     if (form.tipoReuniao === 'externa' && !form.nomeCliente.trim()) {
-      setFormError('Informe o nome do cliente.')
+      setFormError('Informe o cliente.')
       setFieldHighlight((h) => ({ ...h, nomeCliente: true }))
       return
     }
@@ -571,16 +588,20 @@ export default function App() {
                             className={`form__tipo-cliente${fieldHighlight.nomeCliente ? ' form__tipo-cliente--error' : ''}`}
                           >
                             <label className="form__tipo-cliente-label" htmlFor="nomeCliente">
-                              Nome do cliente
+                              Cliente
                             </label>
-                            <input
+                            <textarea
                               id="nomeCliente"
-                              type="text"
+                              ref={nomeClienteTextareaRef}
                               autoComplete="organization"
-                              className="form__tipo-cliente-input"
-                              placeholder="Um ou vários nomes"
+                              className="form__tipo-cliente-textarea"
+                              placeholder="Um ou vários nomes (várias linhas)"
+                              rows={2}
                               value={form.nomeCliente}
-                              onChange={(e) => updateField('nomeCliente', e.target.value)}
+                              onChange={(e) => {
+                                updateField('nomeCliente', e.target.value)
+                                requestAnimationFrame(() => adjustNomeClienteTextareaHeight())
+                              }}
                             />
                           </div>
                         ) : null}

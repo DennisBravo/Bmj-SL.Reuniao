@@ -40,8 +40,10 @@ export default function ReservaSlotDetalheModal({ reservation, onClose }) {
         </div>
         {reservationTipoReuniao(r) === 'externa' && r.nomeCliente?.trim() ? (
           <div className="app__modal-field app__modal-field--readonly">
-            <span className="app__modal-static-label">Nome do cliente</span>
-            <p className="app__modal-static-value">{r.nomeCliente.trim()}</p>
+            <span className="app__modal-static-label">Cliente</span>
+            <p className="app__modal-static-value app__modal-static-value--multiline">
+              {r.nomeCliente.trim()}
+            </p>
           </div>
         ) : null}
         <div className="app__modal-field app__modal-field--readonly">
