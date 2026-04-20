@@ -534,7 +534,11 @@ export default function App() {
                         onChange={(e) => updateField('emailSolicitante', e.target.value)}
                       />
                     </div>
+                  </div>
+                </div>
 
+                <div className="form__tipo-participantes-row" aria-label="Tipo e participantes">
+                  <div className="form__tipo-participantes-cell form__tipo-participantes-cell--tipo">
                     <fieldset
                       className={`form__tipo-fieldset${fieldHighlight.tipo ? ' form__tipo-fieldset--error' : ''}`}
                     >
@@ -582,23 +586,23 @@ export default function App() {
                         ) : null}
                       </div>
                     </fieldset>
-
-                    <div
-                      className={`form__row${fieldHighlight.participantes ? ' form__row--error' : ''}`}
-                    >
-                      <label htmlFor="participantes">Participantes (só e-mails)</label>
-                      <textarea
-                        id="participantes"
-                        className="form__textarea"
-                        placeholder="Um e-mail por linha ou separados por vírgula (convites de calendário)"
-                        value={form.participantes}
-                        onChange={(e) => updateField('participantes', e.target.value)}
-                      />
-                      <span className="hint form__field-hint">
-                        Apenas endereços válidos. Os convites são enviados para estes e-mails quando o
-                        calendário estiver configurado no servidor.
-                      </span>
-                    </div>
+                  </div>
+                  <div
+                    className={`form__tipo-participantes-cell form__tipo-participantes-cell--part${fieldHighlight.participantes ? ' form__tipo-participantes-cell--error' : ''}`}
+                  >
+                    <label className="form__participantes-label" htmlFor="participantes">
+                      Participantes (só e-mails)
+                    </label>
+                    <textarea
+                      id="participantes"
+                      className="form__textarea form__textarea--participantes-compact"
+                      placeholder="Um por linha ou separados por vírgula"
+                      value={form.participantes}
+                      onChange={(e) => updateField('participantes', e.target.value)}
+                    />
+                    <span className="hint form__field-hint form__participantes-hint">
+                      Só e-mails válidos. Convites se o calendário estiver configurado no servidor.
+                    </span>
                   </div>
                 </div>
 

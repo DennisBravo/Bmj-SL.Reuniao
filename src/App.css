@@ -853,6 +853,72 @@
   }
 }
 
+/* Tipo de reunião + Participantes na mesma linha (uma coluna em ecrãs estreitos) */
+.form__tipo-participantes-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 24px;
+  align-items: stretch;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .form__tipo-participantes-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form__tipo-participantes-cell {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.form__tipo-participantes-cell--tipo .form__tipo-fieldset {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 5.25rem;
+}
+
+.form__tipo-participantes-cell--tipo .form__tipo-row {
+  flex: 1;
+  align-items: center;
+}
+
+.form__tipo-participantes-cell--part {
+  gap: 6px;
+}
+
+.form__participantes-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6b7287;
+}
+
+.form__textarea--participantes-compact {
+  flex: 1 1 auto;
+  min-height: 4.5rem !important;
+  max-height: 7rem;
+  resize: vertical;
+  overflow-y: auto;
+  padding: 10px 12px !important;
+  line-height: 1.35;
+}
+
+.form__tipo-participantes-cell--error .form__textarea--participantes-compact {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 1px rgba(181, 71, 71, 0.15);
+}
+
+.form__participantes-hint {
+  margin: 0 !important;
+  font-size: 0.72rem !important;
+  line-height: 1.35 !important;
+}
+
 .form__tipo-fieldset {
   margin: 0;
   padding: 6px 10px 8px;
