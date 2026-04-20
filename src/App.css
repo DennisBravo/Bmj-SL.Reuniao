@@ -1025,11 +1025,13 @@
   box-shadow: none;
 }
 
-/* Título + rádios (+ botão Gerir) na mesma linha; resumo na linha seguinte */
+/* Título + rádios (+ botão Gerir) na mesma linha; resumo na linha seguinte.
+   flex-start: com a linha tipo/participantes em stretch, evita centrar o bloco
+   no eixo vertical — «Gerir clientes» fica alinhado ao topo como «Gerir participantes». */
 .form__tipo-fieldset--compact {
   display: flex;
   flex-flow: row wrap;
-  align-items: center;
+  align-items: flex-start;
   column-gap: 10px;
   row-gap: 2px;
 }
