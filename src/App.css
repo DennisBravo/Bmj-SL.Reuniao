@@ -697,6 +697,36 @@
   gap: 18px;
 }
 
+/* Nova reserva: duas colunas (desktop), uma em ecrãs estreitos */
+.form__grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px 32px;
+  align-items: start;
+}
+
+.form__col {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.form__field-hint {
+  display: block;
+  margin-top: 6px;
+}
+
+.form__row--full {
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .form__grid-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
 .form__row {
   display: flex;
   flex-direction: column;

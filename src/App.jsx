@@ -324,120 +324,126 @@ export default function App() {
                 ) : null}
                 {formError ? <p className="form__error">{formError}</p> : null}
 
-                <div className="form__row">
-                  <label htmlFor="sala">Nome da sala</label>
-                  <select
-                    id="sala"
-                    value={form.sala}
-                    onChange={(e) => updateField('sala', e.target.value)}
-                  >
-                    {SALAS.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <div className="form__grid-2col" aria-label="Dados da reserva">
+                  <div className="form__col">
+                    <div className="form__row">
+                      <label htmlFor="sala">Nome da sala</label>
+                      <select
+                        id="sala"
+                        value={form.sala}
+                        onChange={(e) => updateField('sala', e.target.value)}
+                      >
+                        {SALAS.map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                <div className="form__row">
-                  <label htmlFor="data">Data</label>
-                  <input
-                    id="data"
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => {
-                      setSelectedDate(e.target.value)
-                      setSaveSuccess(false)
-                    }}
-                  />
-                </div>
+                    <div className="form__row">
+                      <label htmlFor="data">Data</label>
+                      <input
+                        id="data"
+                        type="date"
+                        value={selectedDate}
+                        onChange={(e) => {
+                          setSelectedDate(e.target.value)
+                          setSaveSuccess(false)
+                        }}
+                      />
+                    </div>
 
-                <div className="form__row">
-                  <label htmlFor="dataFim">Último dia (reunião em vários dias)</label>
-                  <input
-                    id="dataFim"
-                    type="date"
-                    min={selectedDate}
-                    value={form.dataFim}
-                    onChange={(e) => updateField('dataFim', e.target.value)}
-                  />
-                  <span className="hint" style={{ marginTop: 6 }}>
-                    Opcional. Deixe vazio para um único dia. O mesmo horário repete em cada dia.
-                  </span>
-                </div>
+                    <div className="form__row">
+                      <label htmlFor="dataFim">Último dia (reunião em vários dias)</label>
+                      <input
+                        id="dataFim"
+                        type="date"
+                        min={selectedDate}
+                        value={form.dataFim}
+                        onChange={(e) => updateField('dataFim', e.target.value)}
+                      />
+                      <span className="hint form__field-hint">
+                        Opcional. Deixe vazio para um único dia. O mesmo horário repete em cada dia.
+                      </span>
+                    </div>
 
-                <div className="form__row form__row--2">
-                  <div className="form__row">
-                    <label htmlFor="ini">Hora início</label>
-                    <input
-                      id="ini"
-                      type="time"
-                      step={SLOT_MINUTES * 60}
-                      value={form.horaInicio}
-                      onChange={(e) => updateField('horaInicio', e.target.value)}
-                    />
+                    <div className="form__row form__row--2">
+                      <div className="form__row">
+                        <label htmlFor="ini">Hora início</label>
+                        <input
+                          id="ini"
+                          type="time"
+                          step={SLOT_MINUTES * 60}
+                          value={form.horaInicio}
+                          onChange={(e) => updateField('horaInicio', e.target.value)}
+                        />
+                      </div>
+                      <div className="form__row">
+                        <label htmlFor="fim">Hora fim</label>
+                        <input
+                          id="fim"
+                          type="time"
+                          step={SLOT_MINUTES * 60}
+                          value={form.horaFim}
+                          onChange={(e) => updateField('horaFim', e.target.value)}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="form__row">
-                    <label htmlFor="fim">Hora fim</label>
-                    <input
-                      id="fim"
-                      type="time"
-                      step={SLOT_MINUTES * 60}
-                      value={form.horaFim}
-                      onChange={(e) => updateField('horaFim', e.target.value)}
-                    />
+
+                  <div className="form__col">
+                    <div className="form__row">
+                      <label htmlFor="titulo">Título da reunião</label>
+                      <input
+                        id="titulo"
+                        type="text"
+                        autoComplete="off"
+                        placeholder="Ex.: Alinhamento trimestral"
+                        value={form.titulo}
+                        onChange={(e) => updateField('titulo', e.target.value)}
+                      />
+                    </div>
+
+                    <div className="form__row">
+                      <label htmlFor="solicitante">Solicitante</label>
+                      <input
+                        id="solicitante"
+                        type="text"
+                        autoComplete="name"
+                        placeholder="Nome de quem reserva"
+                        value={form.solicitante}
+                        onChange={(e) => updateField('solicitante', e.target.value)}
+                      />
+                    </div>
+
+                    <div className="form__row">
+                      <label htmlFor="emailSolicitante">E-mail do solicitante</label>
+                      <input
+                        id="emailSolicitante"
+                        type="email"
+                        autoComplete="email"
+                        inputMode="email"
+                        required
+                        placeholder="nome@bmj.com.br"
+                        value={form.emailSolicitante}
+                        onChange={(e) => updateField('emailSolicitante', e.target.value)}
+                      />
+                    </div>
+
+                    <div className="form__row">
+                      <label htmlFor="participantes">Participantes</label>
+                      <textarea
+                        id="participantes"
+                        placeholder="Nomes ou e-mails, um por linha"
+                        value={form.participantes}
+                        onChange={(e) => updateField('participantes', e.target.value)}
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className="form__row">
-                  <label htmlFor="titulo">Título da reunião</label>
-                  <input
-                    id="titulo"
-                    type="text"
-                    autoComplete="off"
-                    placeholder="Ex.: Alinhamento trimestral"
-                    value={form.titulo}
-                    onChange={(e) => updateField('titulo', e.target.value)}
-                  />
-                </div>
-
-                <div className="form__row">
-                  <label htmlFor="solicitante">Solicitante</label>
-                  <input
-                    id="solicitante"
-                    type="text"
-                    autoComplete="name"
-                    placeholder="Nome de quem reserva"
-                    value={form.solicitante}
-                    onChange={(e) => updateField('solicitante', e.target.value)}
-                  />
-                </div>
-
-                <div className="form__row">
-                  <label htmlFor="emailSolicitante">E-mail do solicitante</label>
-                  <input
-                    id="emailSolicitante"
-                    type="email"
-                    autoComplete="email"
-                    inputMode="email"
-                    required
-                    placeholder="nome@bmj.com.br"
-                    value={form.emailSolicitante}
-                    onChange={(e) => updateField('emailSolicitante', e.target.value)}
-                  />
-                </div>
-
-                <div className="form__row">
-                  <label htmlFor="participantes">Participantes</label>
-                  <textarea
-                    id="participantes"
-                    placeholder="Nomes ou e-mails, um por linha"
-                    value={form.participantes}
-                    onChange={(e) => updateField('participantes', e.target.value)}
-                  />
-                </div>
-
-                <div className="form__row">
+                <div className="form__row form__row--full">
                   <label htmlFor="observacoes">Observações e necessidades da reunião</label>
                   <textarea
                     id="observacoes"
