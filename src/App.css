@@ -871,8 +871,7 @@
   gap: 16px 24px;
   align-items: stretch;
   width: 100%;
-  /* Altura mínima estável (ajustada após redução dos textareas) */
-  min-height: clamp(12.5rem, 22vh, 16.5rem);
+  min-height: clamp(9rem, 16vh, 12rem);
 }
 
 @media (max-width: 900px) {
@@ -913,12 +912,12 @@
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   min-width: 0;
   min-height: 0;
   height: 100%;
-  padding: 12px 14px;
-  border-radius: 12px;
+  padding: 8px 10px 10px;
+  border-radius: 10px;
   border: 1px solid var(--border);
   background: var(--surface-2);
   box-sizing: border-box;
@@ -940,7 +939,7 @@
 
 .form__panel__legend {
   display: block;
-  margin: 0 0 6px;
+  margin: 0 0 2px;
   padding: 0;
   width: 100%;
   font-size: 0.625rem;
@@ -996,7 +995,7 @@
 
 .form__tipo-legend {
   padding: 0;
-  margin: 0 0 6px;
+  margin: 0 0 2px;
   width: 100%;
   font-size: 0.625rem;
   font-weight: 700;
@@ -1009,7 +1008,7 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 6px;
+  gap: 4px;
   flex: 1 1 auto;
   min-height: 0;
 }
@@ -1018,7 +1017,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 14px;
+  gap: 4px 12px;
   flex-shrink: 0;
   margin-top: 0;
 }
@@ -1036,19 +1035,36 @@
 .form__tipo-label input {
   width: 16px;
   height: 16px;
+  margin: 0;
+  flex-shrink: 0;
   accent-color: var(--primary);
   cursor: pointer;
+}
+
+/* Evita artefacto visual (barra / anel estranho) no rádio ao focar ou clicar */
+.form__tipo-label input[type='radio'] {
+  outline: none;
+  box-shadow: none;
+}
+
+.form__tipo-label input[type='radio']:focus {
+  outline: none;
+}
+
+.form__tipo-label input[type='radio']:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 .form__tipo-cliente {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 6px;
+  gap: 4px;
   width: 100%;
   min-width: 0;
   flex: 0 0 auto;
-  margin-top: 2px;
+  margin-top: 0;
   animation: formTipoClienteIn 0.16s ease-out;
 }
 
@@ -1125,7 +1141,7 @@
   cursor: pointer;
 }
 
-.form input:focus,
+.form input:focus:not([type='radio']):not([type='checkbox']),
 .form select:focus,
 .form textarea:focus {
   outline: none;
@@ -1139,17 +1155,19 @@
 }
 
 /*
- * Cliente + Participantes: ~2–3 linhas visíveis, altura fixa modesta, scroll interno.
- * Mesmo padrão para ambos (sem crescimento automático que pese no layout).
+ * Cliente + Participantes: ~2 linhas visíveis, caixa compacta, scroll interno.
+ * Padding reduzido só nestes campos (prevalece sobre .form textarea).
  */
 .form textarea.form__textarea--participantes-compact,
 .form textarea.form__textarea--panel-inset {
-  --form-panel-textarea-lines: 5.75rem;
+  --form-panel-textarea-lines: 4.125rem;
   height: var(--form-panel-textarea-lines);
-  min-height: var(--form-panel-textarea-lines);
+  min-height: var(--form-panel-textarea-lines) !important;
   max-height: var(--form-panel-textarea-lines);
+  padding: 8px 12px !important;
   flex: 0 0 auto;
-  line-height: 1.45;
+  line-height: 1.4;
+  font-size: 0.875rem;
   resize: none;
   overflow-y: auto;
   box-sizing: border-box;
