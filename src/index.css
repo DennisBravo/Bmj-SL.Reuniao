@@ -64,7 +64,48 @@ body {
   max-width: var(--page-max);
   margin: 0 auto;
   min-height: 100svh;
-  padding: 0 var(--page-pad-x) 40px;
+  padding: 0 var(--page-pad-x) 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Shell global: conteúdo cresce, rodapé no fim da vista (sem sobrepor) */
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.app-layout__content {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.app-footer {
+  flex-shrink: 0;
+  padding-top: 1.25rem;
+  padding-bottom: 0.25rem;
+  text-align: center;
+}
+
+.app-footer__text {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--text-muted);
+  opacity: 0.88;
+}
+
+@media (max-width: 520px) {
+  .app-footer__text {
+    font-size: 0.6875rem;
+    padding-inline: 4px;
+  }
 }
 
 h1,

@@ -19,6 +19,10 @@ import {
 import { useReservas } from './ReservasContext.jsx'
 import BmjLogo from './components/BmjLogo.jsx'
 import ReservaSlotDetalheModal from './components/ReservaSlotDetalheModal.jsx'
+import {
+  M365EmailAutocomplete,
+  M365ParticipantesAutocomplete,
+} from './components/M365UserAutocompleteFields.jsx'
 import { getCurrentUserEmail, normalizeEmail } from './envConfig.js'
 import { notifyTeamsNewReservationWithNotes } from './teamsWebhook.js'
 import './App.css'
@@ -540,15 +544,12 @@ export default function App() {
 
                     <div className="form__row">
                       <label htmlFor="emailSolicitante">E-mail do solicitante</label>
-                      <input
+                      <M365EmailAutocomplete
                         id="emailSolicitante"
-                        type="email"
-                        autoComplete="email"
-                        inputMode="email"
                         required
                         placeholder="nome@bmj.com.br"
                         value={form.emailSolicitante}
-                        onChange={(e) => updateField('emailSolicitante', e.target.value)}
+                        onValueChange={(v) => updateField('emailSolicitante', v)}
                       />
                     </div>
                   </div>
@@ -614,12 +615,12 @@ export default function App() {
                     <label className="form__participantes-label" htmlFor="participantes">
                       Participantes (só e-mails)
                     </label>
-                    <textarea
+                    <M365ParticipantesAutocomplete
                       id="participantes"
                       className="form__textarea form__textarea--participantes-compact"
                       placeholder="Um por linha ou separados por vírgula"
                       value={form.participantes}
-                      onChange={(e) => updateField('participantes', e.target.value)}
+                      onValueChange={(v) => updateField('participantes', v)}
                     />
                     <span className="hint form__field-hint form__participantes-hint">
                       Só e-mails válidos. Convites se o calendário estiver configurado no servidor.
