@@ -1025,51 +1025,65 @@
   box-shadow: none;
 }
 
-/* Título + rádios (+ botão Gerir) na mesma linha; resumo na linha seguinte.
-   flex-start: com a linha tipo/participantes em stretch, evita centrar o bloco
-   no eixo vertical — «Gerir clientes» fica alinhado ao topo como «Gerir participantes». */
+/* Mesma hierarquia que «Participantes»: linha 1 = título + Gerir; linha 2 = rádios; linha 3 = resumo.
+   Grid evita o botão ficar na linha dos rádios (ordem anterior no flex). */
 .form__tipo-fieldset--compact {
-  display: flex;
-  flex-flow: row wrap;
-  align-items: flex-start;
-  column-gap: 10px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 8px;
   row-gap: 2px;
+  align-items: center;
 }
 
 .form__tipo-fieldset--compact > .form__tipo-legend {
   float: none;
-  width: auto;
-  max-width: 42%;
+  grid-column: 1;
+  grid-row: 1;
   margin: 0;
   padding: 0;
-  flex: 0 1 auto;
-  font-size: 0.625rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #6b7287;
-  line-height: 1.2;
-}
-
-.form__tipo-fieldset--compact > .form__tipo-options {
-  flex: 1 1 auto;
   min-width: 0;
 }
 
 .form__tipo-fieldset--compact > .form__panel-edit-btn {
-  margin-left: auto;
+  grid-column: 2;
+  grid-row: 1;
+  margin-left: 0;
+}
+
+.form__tipo-fieldset--compact > .form__tipo-options {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-width: 0;
 }
 
 .form__tipo-fieldset--compact > .form__panel-summary--sub {
-  flex: 1 0 100%;
-  width: 100%;
+  grid-column: 1 / -1;
+  grid-row: 3;
   margin: 0;
 }
 
 @media (max-width: 520px) {
+  .form__tipo-fieldset--compact {
+    grid-template-columns: 1fr;
+  }
+
   .form__tipo-fieldset--compact > .form__tipo-legend {
-    max-width: none;
-    flex: 1 0 100%;
+    grid-column: 1 / -1;
+  }
+
+  .form__tipo-fieldset--compact > .form__panel-edit-btn {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: end;
+  }
+
+  /* Com «Gerir clientes», rádios e resumo descem uma linha */
+  .form__tipo-fieldset--compact:has(> .form__panel-edit-btn) > .form__tipo-options {
+    grid-row: 3;
+  }
+
+  .form__tipo-fieldset--compact:has(> .form__panel-edit-btn) > .form__panel-summary--sub {
+    grid-row: 4;
   }
 }
 

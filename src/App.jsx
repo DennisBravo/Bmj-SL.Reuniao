@@ -617,7 +617,16 @@ export default function App() {
                       <fieldset
                         className={`form__tipo-fieldset form__tipo-fieldset--compact${fieldHighlight.tipo ? ' form__tipo-fieldset--error' : ''}`}
                       >
-                        <legend className="form__tipo-legend">Tipo de reunião</legend>
+                        <legend className="form__tipo-legend form__panel__legend">Tipo de reunião</legend>
+                        {form.tipoReuniao === 'externa' ? (
+                          <button
+                            type="button"
+                            className="btn-ghost form__panel-edit-btn"
+                            onClick={openClienteModal}
+                          >
+                            Gerir clientes
+                          </button>
+                        ) : null}
                         <div className="form__tipo-options" role="presentation">
                           <label className="form__tipo-label">
                             <input
@@ -640,15 +649,6 @@ export default function App() {
                             Externa
                           </label>
                         </div>
-                        {form.tipoReuniao === 'externa' ? (
-                          <button
-                            type="button"
-                            className="btn-ghost form__panel-edit-btn"
-                            onClick={openClienteModal}
-                          >
-                            Gerir clientes
-                          </button>
-                        ) : null}
                         {form.tipoReuniao === 'externa' ? (
                           <p
                             className={`form__panel-summary form__panel-summary--sub${fieldHighlight.nomeCliente ? ' form__panel-summary--error' : ''}`}
