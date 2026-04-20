@@ -38,12 +38,12 @@ const HEADER_LOGO_SHIFT_X_PX = -266
 
 export default function App() {
   const { reservations, addReservation, loading, error, clearError } = useReservas()
-  const [selectedDate, setSelectedDate] = useState(() => todayISO())
 
   const [form, setForm] = useState({
     sala: SALAS[0],
     horaInicio: '09:00',
     horaFim: '10:00',
+    dataInicio: todayISO(),
     dataFim: '',
     titulo: '',
     solicitante: '',
@@ -88,8 +88,8 @@ export default function App() {
   }, [saveSuccess])
 
   const reservationsForDay = useMemo(
-    () => reservations.filter((r) => reservationCoversDate(r, selectedDate)),
-    [reservations, selectedDate],
+    () => reservations.filter((r) => reservationCoversDate(r, form.dataInicio)),
+    [reservations, form.dataInicio],
   )
 
   const getSlotReservation = useCallback(
@@ -102,7 +102,7 @@ export default function App() {
     setSlotHoverPreview(null)
     cancelHoverHide()
     setDetalheReserva(null)
-  }, [selectedDate, cancelHoverHide])
+  }, [form.dataInicio, cancelHoverHide])
 
   function handleBusySlotEnter(e, res) {
     cancelHoverHide()
@@ -126,6 +126,9 @@ export default function App() {
     setForm((f) => {
       const next = { ...f, [key]: value }
       if (key === 'tipoReuniao' && value === 'interna') next.nomeCliente = ''
+      if (key === 'dataInicio' && (next.dataFim || '').trim() && next.dataFim < value) {
+        next.dataFim = value
+      }
       return next
     })
     setFormError('')
@@ -196,15 +199,21 @@ export default function App() {
       return
     }
 
-    const dataFim = (form.dataFim || '').trim() || selectedDate
-    if (dataFim < selectedDate) {
+    const dataInicio = (form.dataInicio || '').trim()
+    if (!dataInicio) {
+      setFormError('Informe a data de início.')
+      return
+    }
+    const dataFimRaw = (form.dataFim || '').trim()
+    const dataFim = dataFimRaw || dataInicio
+    if (dataFim < dataInicio) {
       setFormError('A data fim não pode ser anterior à data de início.')
       return
     }
 
     const conflict = findReservationConflictRange(
       form.sala,
-      selectedDate,
+      dataInicio,
       dataFim,
       startMin,
       endMin,
@@ -224,8 +233,8 @@ export default function App() {
     const novo = {
       id: crypto.randomUUID(),
       sala: form.sala,
-      date: selectedDate,
-      ...(dataFim !== selectedDate ? { dateFim: dataFim } : {}),
+      date: dataInicio,
+      ...(dataFim !== dataInicio ? { dateFim: dataFim } : {}),
       horaInicio: form.horaInicio,
       horaFim: form.horaFim,
       titulo,
@@ -299,17 +308,12 @@ export default function App() {
 
           <h1 className="app__title app__header-grid-title">Reserva de salas</h1>
           <div className="app__date app__date--title-row app__header-grid-date">
-            <label htmlFor="dia">Data</label>
+            <label htmlFor="dia">Data início</label>
             <input
               id="dia"
               type="date"
-              value={selectedDate}
-              onChange={(e) => {
-                setSelectedDate(e.target.value)
-                setFormError('')
-                setSaveSuccess(false)
-                clearError()
-              }}
+              value={form.dataInicio}
+              onChange={(e) => updateField('dataInicio', e.target.value)}
             />
           </div>
 
@@ -446,31 +450,26 @@ export default function App() {
                       </select>
                     </div>
 
-                    <div className="form__row">
-                      <label htmlFor="data">Data</label>
-                      <input
-                        id="data"
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e) => {
-                          setSelectedDate(e.target.value)
-                          setSaveSuccess(false)
-                        }}
-                      />
-                    </div>
-
-                    <div className="form__row">
-                      <label htmlFor="dataFim">Último dia (reunião em vários dias)</label>
-                      <input
-                        id="dataFim"
-                        type="date"
-                        min={selectedDate}
-                        value={form.dataFim}
-                        onChange={(e) => updateField('dataFim', e.target.value)}
-                      />
-                      <span className="hint form__field-hint">
-                        Opcional. Deixe vazio para um único dia. O mesmo horário repete em cada dia.
-                      </span>
+                    <div className="form__row form__row--2">
+                      <div className="form__row">
+                        <label htmlFor="dataInicio">Data início</label>
+                        <input
+                          id="dataInicio"
+                          type="date"
+                          value={form.dataInicio}
+                          onChange={(e) => updateField('dataInicio', e.target.value)}
+                        />
+                      </div>
+                      <div className="form__row">
+                        <label htmlFor="dataFim">Data fim</label>
+                        <input
+                          id="dataFim"
+                          type="date"
+                          min={form.dataInicio}
+                          value={form.dataFim}
+                          onChange={(e) => updateField('dataFim', e.target.value)}
+                        />
+                      </div>
                     </div>
 
                     <div className="form__row form__row--2">
