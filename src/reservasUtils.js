@@ -49,6 +49,13 @@ export function todayISO() {
   return d.toISOString().slice(0, 10)
 }
 
+/** Data ISO (YYYY-MM-DD) → exibição curta pt-BR (ex.: 19/04/26). */
+export function formatShortDateBR(iso) {
+  if (!iso) return ''
+  const d = new Date(`${iso}T12:00:00`)
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })
+}
+
 export function toISODateLocal(d) {
   const y = d.getFullYear()
   const m = pad2(d.getMonth() + 1)

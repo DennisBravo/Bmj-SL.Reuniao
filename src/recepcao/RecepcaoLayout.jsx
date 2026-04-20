@@ -2,6 +2,7 @@ import { NavLink, Outlet, Link } from 'react-router-dom'
 
 const NAV_ITEMS = [
   { to: 'mapa-semanal', label: 'Mapa semanal de reservas' },
+  { to: 'reservas-do-dia', label: 'Reserva do dia' },
   { to: 'cancelar', label: 'Cancelar reserva' },
   { to: 'relatorios', label: 'Relatórios' },
   { to: 'manuais', label: 'Manuais das salas' },

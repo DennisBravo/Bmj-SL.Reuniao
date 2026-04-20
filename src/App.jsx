@@ -14,9 +14,7 @@ import {
 } from './reservasUtils'
 import { useReservas } from './ReservasContext.jsx'
 import BmjLogo from './components/BmjLogo.jsx'
-import CancelarReservaModal from './components/CancelarReservaModal.jsx'
-import EditarReservaModal from './components/EditarReservaModal.jsx'
-import { getCurrentUserEmail, normalizeEmail, canAlterReservation, PERMISSAO_NEGADA_MSG } from './envConfig.js'
+import { getCurrentUserEmail, normalizeEmail } from './envConfig.js'
 import { notifyTeamsNewReservationWithNotes } from './teamsWebhook.js'
 import './App.css'
 
@@ -33,19 +31,12 @@ const TIME_SLOTS = buildTimeSlots()
 /** Desloca a logo para a esquerda (px). Negativo = esquerda. ~113px ≈ 3cm em ecrã típico. */
 const HEADER_LOGO_SHIFT_X_PX = -266
 
-function formatShortDateBR(iso) {
-  if (!iso) return ''
-  const d = new Date(`${iso}T12:00:00`)
-  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })
-}
-
 function slotCoveredByReservation(slotStart, slotEnd, resStart, resEnd) {
   return resStart < slotEnd && slotStart < resEnd
 }
 
 export default function App() {
-  const { reservations, addReservation, updateReservation, cancelReservationWithAudit, loading, error, clearError } =
-    useReservas()
+  const { reservations, addReservation, loading, error, clearError } = useReservas()
   const [selectedDate, setSelectedDate] = useState(() => todayISO())
 
   const [form, setForm] = useState({
@@ -61,18 +52,6 @@ export default function App() {
   })
   const [formError, setFormError] = useState('')
   const [saveSuccess, setSaveSuccess] = useState(false)
-  const [cancelTarget, setCancelTarget] = useState(null)
-  const [editTarget, setEditTarget] = useState(null)
-
-  useEffect(() => {
-    function onKey(e) {
-      if (e.key !== 'Escape') return
-      setCancelTarget(null)
-      if (!loading) setEditTarget(null)
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [loading])
 
   useEffect(() => {
     if (!saveSuccess) return
@@ -84,12 +63,6 @@ export default function App() {
     () => reservations.filter((r) => reservationCoversDate(r, selectedDate)),
     [reservations, selectedDate],
   )
-
-  const sortedDayList = useMemo(() => {
-    return [...reservationsForDay].sort(
-      (a, b) => timeToMinutes(a.horaInicio) - timeToMinutes(b.horaInicio),
-    )
-  }, [reservationsForDay])
 
   const isSlotBusy = useCallback(
     (sala, slotStart, slotEnd) => {
@@ -229,7 +202,7 @@ export default function App() {
           <div className="app__header-top-right app__header-grid-nav">
             <nav className="app__tabs" aria-label="Navegação principal">
               <span className="app__tab app__tab--active" aria-current="page">
-                Reservas
+                Reserva de salas
               </span>
             </nav>
             <NavLink
@@ -487,95 +460,8 @@ export default function App() {
                 </div>
               </form>
             </section>
-
-            <section className="panel list-panel">
-              <h3>Reservas do dia ({formatShortDateBR(selectedDate)})</h3>
-              {sortedDayList.length === 0 ? (
-                <p className="empty-state">Nenhuma reserva para esta data.</p>
-              ) : (
-                <ul className="reservations">
-                  {sortedDayList.map((r) => (
-                    <li key={r.id} className="reservation-card">
-                      <div className="reservation-card__time">
-                        {r.horaInicio} – {r.horaFim} · {r.sala}
-                      </div>
-                      <div className="reservation-card__title">{r.titulo}</div>
-                      <div className="reservation-card__meta">
-                        Responsável: {r.solicitante}
-                        {r.emailSolicitante ? (
-                          <>
-                            <br />
-                            E-mail: {r.emailSolicitante}
-                          </>
-                        ) : null}
-                        {r.participantes ? (
-                          <>
-                            <br />
-                            Participantes: {r.participantes.replace(/\n/g, ', ')}
-                          </>
-                        ) : null}
-                        {r.observacoes ? (
-                          <>
-                            <br />
-                            <span className="reservation-card__obs">
-                              Observações: {r.observacoes}
-                            </span>
-                          </>
-                        ) : null}
-                      </div>
-                      <div className="reservation-card__actions">
-                        {canAlterReservation(r) ? (
-                          <>
-                            {r.graphItemId ? (
-                              <button
-                                type="button"
-                                className="btn-ghost"
-                                onClick={() => setEditTarget(r)}
-                              >
-                                Editar
-                              </button>
-                            ) : null}
-                            <button
-                              type="button"
-                              className="btn-ghost"
-                              onClick={() => setCancelTarget(r)}
-                            >
-                              Cancelar reserva
-                            </button>
-                          </>
-                        ) : (
-                          <p className="reservation-card__no-perm" role="status">
-                            {PERMISSAO_NEGADA_MSG}
-                          </p>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
           </div>
         </div>
-
-      {cancelTarget ? (
-        <CancelarReservaModal
-          reservation={cancelTarget}
-          onClose={() => setCancelTarget(null)}
-          onConfirm={(payload) => cancelReservationWithAudit(cancelTarget, payload)}
-        />
-      ) : null}
-      {editTarget ? (
-        <EditarReservaModal
-          key={editTarget.id}
-          reservation={editTarget}
-          reservations={reservations}
-          loading={loading}
-          onClose={() => setEditTarget(null)}
-          onSave={async (payload) => {
-            await updateReservation(payload)
-          }}
-        />
-      ) : null}
     </div>
   )
 }

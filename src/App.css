@@ -512,7 +512,7 @@
 
 .app__below-grid {
   display: grid;
-  grid-template-columns: minmax(300px, 1fr) minmax(300px, 1fr);
+  grid-template-columns: 1fr;
   gap: 28px;
   align-items: stretch;
   width: 100%;
@@ -1800,6 +1800,10 @@ a.app__rececao-menu-item {
   margin: 0;
   font-size: 0.9rem;
   color: var(--text-muted);
+}
+
+.recepcao-reservas-dia__lista {
+  margin-top: 20px;
 }
 
 .recepcao-page__list {
