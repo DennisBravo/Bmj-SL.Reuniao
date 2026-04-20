@@ -166,6 +166,8 @@ export function M365EmailAutocomplete({
     }
   }
 
+  const inputClass = ['m365-ac__input', className].filter(Boolean).join(' ')
+
   return (
     <div className="m365-ac-wrap" ref={wrapRef}>
       <input
@@ -176,7 +178,7 @@ export function M365EmailAutocomplete({
         spellCheck={false}
         required={required}
         placeholder={placeholder}
-        className={className}
+        className={inputClass}
         value={value}
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
@@ -280,6 +282,8 @@ export function M365ParticipantesAutocomplete({
     }
   }
 
+  const taClass = ['m365-ac__textarea', className].filter(Boolean).join(' ')
+
   return (
     <div className="m365-ac-wrap m365-ac-wrap--textarea" ref={wrapRef}>
       <textarea
@@ -288,7 +292,7 @@ export function M365ParticipantesAutocomplete({
         spellCheck={false}
         autoComplete="off"
         placeholder={placeholder}
-        className={className}
+        className={taClass}
         value={value}
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
