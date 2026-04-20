@@ -984,6 +984,11 @@
   white-space: nowrap;
 }
 
+/* Só participantes: deslocar «Gerir participantes» ~1 cm para baixo (não afecta «Gerir clientes»). */
+.form__tipo-participantes-cell--part .form__panel-head .form__panel-edit-btn {
+  transform: translateY(1cm);
+}
+
 .form__panel--error {
   border-color: var(--danger);
   box-shadow: 0 0 0 1px rgba(181, 71, 71, 0.18);
