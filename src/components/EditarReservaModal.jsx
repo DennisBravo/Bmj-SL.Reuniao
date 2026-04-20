@@ -38,7 +38,16 @@ export default function EditarReservaModal({ reservation, reservations, loading,
   if (!reservation?.graphItemId) return null
 
   function updateField(key, value) {
-    setForm((f) => ({ ...f, [key]: value }))
+    setForm((f) => {
+      const next = { ...f, [key]: value }
+      if (key === 'dataInicio') {
+        const di = String(value).trim()
+        const df = (next.dataFim || '').trim()
+        if (!df) next.dataFim = di
+        else if (df < di) next.dataFim = di
+      }
+      return next
+    })
     setFormError('')
   }
 
@@ -200,7 +209,7 @@ export default function EditarReservaModal({ reservation, reservations, loading,
                 id="edit-data-fim"
                 type="date"
                 min={form.dataInicio}
-                value={form.dataFim}
+                value={form.dataFim || form.dataInicio}
                 onChange={(e) => updateField('dataFim', e.target.value)}
               />
             </div>

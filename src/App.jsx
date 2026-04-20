@@ -48,7 +48,7 @@ export default function App() {
     horaInicio: '09:00',
     horaFim: '10:00',
     dataInicio: todayISO(),
-    dataFim: '',
+    dataFim: todayISO(),
     titulo: '',
     solicitante: '',
     emailSolicitante: '',
@@ -67,17 +67,6 @@ export default function App() {
   const [detalheReserva, setDetalheReserva] = useState(null)
   const [slotHoverPreview, setSlotHoverPreview] = useState(null)
   const hoverHideTimerRef = useRef(null)
-  const nomeClienteTextareaRef = useRef(null)
-
-  const adjustNomeClienteTextareaHeight = useCallback(() => {
-    const el = nomeClienteTextareaRef.current
-    if (!el) return
-    el.style.height = 'auto'
-    const minPx = 96
-    const maxPx = 220
-    const next = Math.min(Math.max(el.scrollHeight, minPx), maxPx)
-    el.style.height = `${next}px`
-  }, [])
 
   const cancelHoverHide = useCallback(() => {
     if (hoverHideTimerRef.current) {
@@ -119,12 +108,6 @@ export default function App() {
     setDetalheReserva(null)
   }, [form.dataInicio, cancelHoverHide])
 
-  useEffect(() => {
-    if (form.tipoReuniao !== 'externa') return
-    const id = requestAnimationFrame(() => adjustNomeClienteTextareaHeight())
-    return () => cancelAnimationFrame(id)
-  }, [form.tipoReuniao, form.nomeCliente, adjustNomeClienteTextareaHeight])
-
   function handleBusySlotEnter(e, res) {
     cancelHoverHide()
     const rect = e.currentTarget.getBoundingClientRect()
@@ -147,8 +130,11 @@ export default function App() {
     setForm((f) => {
       const next = { ...f, [key]: value }
       if (key === 'tipoReuniao' && value === 'interna') next.nomeCliente = ''
-      if (key === 'dataInicio' && (next.dataFim || '').trim() && next.dataFim < value) {
-        next.dataFim = value
+      if (key === 'dataInicio') {
+        const di = String(value).trim()
+        const df = (next.dataFim || '').trim()
+        if (!df) next.dataFim = di
+        else if (df < di) next.dataFim = di
       }
       return next
     })
@@ -487,7 +473,7 @@ export default function App() {
                           id="dataFim"
                           type="date"
                           min={form.dataInicio}
-                          value={form.dataFim}
+                          value={form.dataFim || form.dataInicio}
                           onChange={(e) => updateField('dataFim', e.target.value)}
                         />
                       </div>
@@ -557,74 +543,76 @@ export default function App() {
 
                 <div className="form__tipo-participantes-row" aria-label="Tipo e participantes">
                   <div className="form__tipo-participantes-cell form__tipo-participantes-cell--tipo">
-                    <fieldset
-                      className={`form__tipo-fieldset${fieldHighlight.tipo ? ' form__tipo-fieldset--error' : ''}`}
+                    <div
+                      className={`form__panel${fieldHighlight.tipo || fieldHighlight.nomeCliente ? ' form__panel--error' : ''}`}
                     >
-                      <legend className="form__tipo-legend">Tipo de reunião</legend>
-                      <div className="form__tipo-row">
-                        <div className="form__tipo-options" role="presentation">
-                          <label className="form__tipo-label">
-                            <input
-                              type="radio"
-                              name="tipoReuniao"
-                              value="interna"
-                              checked={form.tipoReuniao === 'interna'}
-                              onChange={() => updateField('tipoReuniao', 'interna')}
-                            />
-                            Interna
-                          </label>
-                          <label className="form__tipo-label">
-                            <input
-                              type="radio"
-                              name="tipoReuniao"
-                              value="externa"
-                              checked={form.tipoReuniao === 'externa'}
-                              onChange={() => updateField('tipoReuniao', 'externa')}
-                            />
-                            Externa
-                          </label>
-                        </div>
-                        {form.tipoReuniao === 'externa' ? (
-                          <div
-                            className={`form__tipo-cliente${fieldHighlight.nomeCliente ? ' form__tipo-cliente--error' : ''}`}
-                          >
-                            <label className="form__tipo-cliente-label" htmlFor="nomeCliente">
-                              Cliente
+                      <fieldset
+                        className={`form__tipo-fieldset${fieldHighlight.tipo ? ' form__tipo-fieldset--error' : ''}`}
+                      >
+                        <legend className="form__tipo-legend">Tipo de reunião</legend>
+                        <div className="form__tipo-row">
+                          <div className="form__tipo-options" role="presentation">
+                            <label className="form__tipo-label">
+                              <input
+                                type="radio"
+                                name="tipoReuniao"
+                                value="interna"
+                                checked={form.tipoReuniao === 'interna'}
+                                onChange={() => updateField('tipoReuniao', 'interna')}
+                              />
+                              Interna
                             </label>
-                            <textarea
-                              id="nomeCliente"
-                              ref={nomeClienteTextareaRef}
-                              autoComplete="organization"
-                              className="form__tipo-cliente-textarea"
-                              placeholder="Um ou vários nomes (várias linhas)"
-                              rows={2}
-                              value={form.nomeCliente}
-                              onChange={(e) => {
-                                updateField('nomeCliente', e.target.value)
-                                requestAnimationFrame(() => adjustNomeClienteTextareaHeight())
-                              }}
-                            />
+                            <label className="form__tipo-label">
+                              <input
+                                type="radio"
+                                name="tipoReuniao"
+                                value="externa"
+                                checked={form.tipoReuniao === 'externa'}
+                                onChange={() => updateField('tipoReuniao', 'externa')}
+                              />
+                              Externa
+                            </label>
                           </div>
-                        ) : null}
-                      </div>
-                    </fieldset>
+                          {form.tipoReuniao === 'externa' ? (
+                            <div
+                              className={`form__tipo-cliente${fieldHighlight.nomeCliente ? ' form__tipo-cliente--error' : ''}`}
+                            >
+                              <label className="form__tipo-cliente-label" htmlFor="nomeCliente">
+                                Cliente
+                              </label>
+                              <textarea
+                                id="nomeCliente"
+                                autoComplete="organization"
+                                className="form__textarea form__textarea--panel-inset"
+                                placeholder="Um ou vários nomes (várias linhas)"
+                                rows={3}
+                                value={form.nomeCliente}
+                                onChange={(e) => updateField('nomeCliente', e.target.value)}
+                              />
+                            </div>
+                          ) : null}
+                        </div>
+                      </fieldset>
+                    </div>
                   </div>
                   <div
                     className={`form__tipo-participantes-cell form__tipo-participantes-cell--part${fieldHighlight.participantes ? ' form__tipo-participantes-cell--error' : ''}`}
                   >
-                    <label className="form__participantes-label" htmlFor="participantes">
-                      Participantes (só e-mails)
-                    </label>
-                    <M365ParticipantesAutocomplete
-                      id="participantes"
-                      className="form__textarea form__textarea--participantes-compact"
-                      placeholder="Um por linha ou separados por vírgula"
-                      value={form.participantes}
-                      onValueChange={(v) => updateField('participantes', v)}
-                    />
-                    <span className="hint form__field-hint form__participantes-hint">
-                      Só e-mails válidos. Convites se o calendário estiver configurado no servidor.
-                    </span>
+                    <div className={`form__panel${fieldHighlight.participantes ? ' form__panel--error' : ''}`}>
+                      <label className="form__panel__legend" htmlFor="participantes">
+                        Participantes (só e-mails)
+                      </label>
+                      <M365ParticipantesAutocomplete
+                        id="participantes"
+                        className="form__textarea form__textarea--participantes-compact"
+                        placeholder="Um por linha ou separados por vírgula"
+                        value={form.participantes}
+                        onValueChange={(v) => updateField('participantes', v)}
+                      />
+                      <span className="hint form__field-hint form__participantes-hint">
+                        Só e-mails válidos. Convites se o calendário estiver configurado no servidor.
+                      </span>
+                    </div>
                   </div>
                 </div>
 
