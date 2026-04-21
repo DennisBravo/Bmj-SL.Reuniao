@@ -74,7 +74,7 @@ function graphListItemToCarReservation(item) {
     date: f.DataReserva ? f.DataReserva.slice(0, 10) : '',
     dateFim: null,
     horaInicio: f.HoraInicio || '',
-    horaFim: f['Hor_x00e1_riodeFim'] || f.HoraFim || '',
+    horaFim: f.HoraFim || f['Hor_x00e1_riodeFim'] || '',
     titulo: f.Title || '',
     destino: f.Destino != null ? String(f.Destino).trim() : '',
     motivo: f.Motivo != null ? String(f.Motivo).trim() : '',

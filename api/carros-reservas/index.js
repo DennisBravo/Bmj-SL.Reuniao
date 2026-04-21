@@ -143,7 +143,7 @@ function emailFromFields(f) {
 
 /**
  * Ajuste os nomes internos às colunas reais da lista CarrosReserva_BMJ no SharePoint.
- * Campos esperados: Title, DataReserva, HoraInicio, Hor_x00e1_riodeFim, Destino, Motivo,
+ * Campos esperados: Title, DataReserva, HoraInicio, HoraFim, Destino, Motivo,
  * NomedoSolicitante, EmailSolicitante, Observacao, Veiculo, Motorista, ReservaID, Status.
  */
 function buildCarFields(body) {
@@ -157,7 +157,7 @@ function buildCarFields(body) {
         .slice(0, 255) || 'Reserva de carro',
     DataReserva: String(body.date ?? '').trim(),
     HoraInicio: String(body.horaInicio ?? '').trim(),
-    Hor_x00e1_riodeFim: String(body.horaFim ?? '').trim(),
+    HoraFim: String(body.horaFim ?? '').trim(),
     Destino: String(body.destino ?? '').trim(),
     Motivo: String(body.motivo ?? '').trim(),
     NomedoSolicitante: String(body.solicitante ?? '').trim(),
