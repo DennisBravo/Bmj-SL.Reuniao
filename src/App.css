@@ -824,8 +824,11 @@
 }
 
 .availability-grid {
-  --availability-sala-w: 96px;
+  --availability-sala-w: 88px;
+  --availability-qtd-w: 88px;
   --availability-qtd-left: calc(var(--availability-sala-w) + 5px);
+  /* Altura da 1.ª linha do thead (alinhada à célula «HORÁRIOS») — define o offset sticky da linha 08:00… */
+  --availability-head-primary-h: 2.875rem;
   border-collapse: separate;
   border-spacing: 5px;
   width: 100%;
@@ -845,11 +848,21 @@
   background: transparent;
   color: var(--text-muted);
   font-weight: 600;
-  padding: 6px 2px 10px;
-  white-space: nowrap;
+  padding: 0;
+  white-space: normal;
   position: sticky;
   z-index: 2;
   font-size: 0.7rem;
+}
+
+/* Tipografia única dos títulos da grade (maiúsculas via CSS) */
+.availability-grid__head-title {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  line-height: 1.2;
 }
 
 .availability-grid thead tr:first-child th {
@@ -857,9 +870,13 @@
 }
 
 .availability-grid thead tr:nth-child(2) th.availability-grid__th-slot {
-  top: 2.65rem;
-  padding-top: 4px;
-  padding-bottom: 8px;
+  top: var(--availability-head-primary-h);
+  padding: 6px 2px 8px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
 
 .availability-grid .room-head {
@@ -890,54 +907,72 @@
 .availability-grid__head-salas.room-head,
 .availability-grid__sala-cell.room-head {
   min-width: 0;
-  max-width: 104px;
+  max-width: var(--availability-sala-w);
   width: var(--availability-sala-w);
-  padding: 8px 8px;
+  padding: 8px 6px;
   box-sizing: border-box;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.availability-grid thead .availability-grid__head-salas.room-head {
+  text-align: center;
+  vertical-align: middle;
+  padding: 10px 6px;
+  white-space: normal;
+  word-break: keep-all;
+}
+
 .availability-grid__head-qtd {
   position: sticky;
   left: var(--availability-qtd-left);
   z-index: 4;
-  width: 64px;
-  min-width: 64px;
-  max-width: 64px;
-  padding: 8px 4px;
+  width: var(--availability-qtd-w);
+  min-width: var(--availability-qtd-w);
+  max-width: var(--availability-qtd-w);
+  padding: 10px 6px;
   box-sizing: border-box;
   text-align: center;
   vertical-align: middle;
-  font-size: 0.62rem;
-  line-height: 1.2;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--text-muted);
   background: #e2e6ed;
   border-radius: var(--radius-slot);
   border: 1px solid #dde1e8;
 }
 
-.availability-grid__head-horarios {
-  text-align: center;
-  font-size: 0.65rem;
-  letter-spacing: 0.06em;
+.availability-grid__head-qtd-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  line-height: 1.1;
+}
+
+.availability-grid__head-qtd-line {
+  display: block;
   text-transform: uppercase;
-  color: var(--text-muted);
-  padding-bottom: 4px;
+  letter-spacing: inherit;
+}
+
+.availability-grid__head-horarios {
+  text-align: left;
+  vertical-align: bottom;
+  height: var(--availability-head-primary-h);
+  box-sizing: border-box;
+  padding: 0 0 6px 0;
+  margin: 0;
   background: #eef0f4;
+  box-shadow: none;
 }
 
 .availability-grid__qtd-cell {
   position: sticky;
   left: var(--availability-qtd-left);
   z-index: 2;
-  width: 64px;
-  min-width: 64px;
-  max-width: 64px;
+  width: var(--availability-qtd-w);
+  min-width: var(--availability-qtd-w);
+  max-width: var(--availability-qtd-w);
   padding: 6px 4px;
   box-sizing: border-box;
   text-align: center;

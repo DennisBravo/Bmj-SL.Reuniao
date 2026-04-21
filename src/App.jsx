@@ -597,22 +597,30 @@ export default function App() {
               ) : null}
               <table className="availability-grid">
                 <thead>
-                  <tr>
-                    <th className="room-head availability-grid__head-salas" rowSpan={2} scope="col">
+                  <tr className="availability-grid__head-row-primary">
+                    <th className="room-head availability-grid__head-salas availability-grid__head-title" rowSpan={2} scope="col">
                       Salas
                     </th>
-                    <th className="availability-grid__head-qtd" rowSpan={2} scope="col">
-                      QTD Pessoas
+                    <th
+                      className="availability-grid__head-qtd availability-grid__head-title"
+                      rowSpan={2}
+                      scope="col"
+                      aria-label="Quantidade de pessoas (capacidade)"
+                    >
+                      <span className="availability-grid__head-qtd-stack">
+                        <span className="availability-grid__head-qtd-line">Qtd</span>
+                        <span className="availability-grid__head-qtd-line">Pessoas</span>
+                      </span>
                     </th>
                     <th
-                      className="availability-grid__head-horarios"
+                      className="availability-grid__head-horarios availability-grid__head-title"
                       colSpan={TIME_SLOTS.length}
                       scope="colgroup"
                     >
                       Horários
                     </th>
                   </tr>
-                  <tr>
+                  <tr className="availability-grid__head-row-slots">
                     {TIME_SLOTS.map((s) => (
                       <th key={s.startMin} scope="col" className="availability-grid__th-slot">
                         {s.label}
