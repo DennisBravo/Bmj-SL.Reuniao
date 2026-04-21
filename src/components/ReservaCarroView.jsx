@@ -159,24 +159,23 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
   return (
     <div className="carro-view">
       <section className="panel carro-view__info">
-        <h2 className="panel__title">Veículo disponível</h2>
+        <h2 className="panel__title carro-view__panel-title">Veículo disponível</h2>
         <p className="carro-view__vehicle">
           <strong>{CARRO_VEICULO_LABEL}</strong>
         </p>
         <p className="carro-view__driver">
           Motorista: <strong>{CARRO_MOTORISTA_LABEL}</strong>
         </p>
-        <p className="hint carro-view__hint">
+        <p className="carro-view__hint">
           Horário permitido: {minutesToTime(CAR_DAY_START_MIN)} às {minutesToTime(CAR_DAY_END_MIN)}. Slots de{' '}
           {SLOT_MINUTES} min. Não é permitido sobrepor reservas no mesmo horário.
         </p>
       </section>
 
       <section className="panel panel--grid carro-view__occ-panel">
-        <h2 className="panel__title">Ocupação do veículo por unidade</h2>
-        <p className="hint carro-view__occ-hint">
-          Grade na <strong>data</strong> do formulário (08:00–20:00). Reservas antigas sem «Unidade» no SharePoint
-          aparecem só na grade de Brasília.
+        <h2 className="panel__title carro-view__panel-title">Ocupação do veículo por unidade</h2>
+        <p className="carro-view__occ-hint">
+          A grade segue a data escolhida no formulário (intervalo exibido: 08:00–20:00).
         </p>
         <div className="carro-view__occ-wrap">
           {CARRO_UNIDADES_GRADE.map((u) => {
@@ -185,18 +184,20 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
               <div key={u.id} className="carro-view__occ-unit">
                 <h3 className="carro-view__occ-unit-title">{u.titulo}</h3>
                 <div className="grid-wrap carro-view__occ-grid-wrap">
-                  <table className="availability-grid availability-grid--carro">
+                  <table
+                    className="availability-grid availability-grid--carro"
+                    aria-label={`Ocupação do veículo — ${u.titulo}`}
+                  >
                     <thead>
                       <tr className="availability-grid__head-row-primary">
                         <th
-                          className="room-head availability-grid__head-salas availability-grid__head-title"
+                          className="room-head availability-grid__head-carro-corner"
                           rowSpan={2}
                           scope="col"
-                        >
-                          Veículo
-                        </th>
+                          aria-hidden="true"
+                        />
                         <th
-                          className="availability-grid__head-horarios availability-grid__head-title"
+                          className="availability-grid__head-horarios availability-grid__head-title availability-grid__head-title--carro-horarios"
                           colSpan={CAR_GRID_SLOTS.length}
                           scope="colgroup"
                         >
@@ -213,7 +214,11 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
                     </thead>
                     <tbody>
                       <tr>
-                        <th className="room-head availability-grid__sala-cell" scope="row" title={CARRO_VEICULO_LABEL}>
+                        <th
+                          className="room-head availability-grid__sala-cell availability-grid__sala-cell--carro"
+                          scope="row"
+                          title={CARRO_VEICULO_LABEL}
+                        >
                           {CARRO_VEICULO_LABEL}
                         </th>
                         {CAR_GRID_SLOTS.map((slot) => {
@@ -243,7 +248,7 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
       </section>
 
       <section className="panel form-panel carro-view__form-panel">
-        <h2 className="panel__title">Nova reserva de carro</h2>
+        <h2 className="panel__title carro-view__panel-title">Nova reserva de carro</h2>
         {saveSuccess ? (
           <p className="form__success" role="status">
             Reserva de carro registada com sucesso.

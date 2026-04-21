@@ -172,8 +172,19 @@
   padding-bottom: 8px;
 }
 
+.carro-view__panel-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  margin-bottom: 0.35rem;
+}
+
 .carro-view__occ-hint {
-  margin: 0 0 14px;
+  margin: 0 0 12px;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--text-muted);
 }
 
 .carro-view__occ-wrap {
@@ -190,30 +201,61 @@
 }
 
 .carro-view__occ-unit-title {
-  margin: 0 0 8px;
-  font-size: 0.875rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  margin: 0 0 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   color: var(--text);
 }
 
 .carro-view__occ-grid-wrap {
-  padding-top: 10px;
+  padding-top: 6px;
 }
 
-/* Grade de carro: uma coluna fixa (veículo) + slots; sem coluna QTD */
+/* Grade de carro: canto sem rótulo «Veículo» + coluna do modelo + slots */
 .availability-grid--carro {
-  --availability-sala-w: 132px;
-  min-width: 520px;
+  --availability-sala-w: 118px;
+  min-width: 480px;
 }
 
-.availability-grid--carro .availability-grid__head-salas.room-head,
-.availability-grid--carro .availability-grid__sala-cell.room-head {
-  max-width: 148px;
+.availability-grid--carro .availability-grid__head-carro-corner {
   width: var(--availability-sala-w);
-  white-space: normal;
-  line-height: 1.25;
-  hyphens: auto;
+  min-width: var(--availability-sala-w);
+  max-width: var(--availability-sala-w);
+  padding: 0;
+  background: #e2e6ed;
+  border-radius: var(--radius-slot);
+  border: 1px solid #dde1e8;
+  vertical-align: middle;
+}
+
+.availability-grid--carro .availability-grid__head-title--carro-horarios {
+  font-size: 0.625rem;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+}
+
+.availability-grid--carro .availability-grid__head-row-slots .availability-grid__th-slot {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 5px 1px 7px;
+}
+
+.availability-grid--carro .availability-grid__sala-cell--carro.room-head {
+  width: var(--availability-sala-w);
+  min-width: var(--availability-sala-w);
+  max-width: var(--availability-sala-w);
+  padding: 8px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  hyphens: none;
+  word-break: normal;
+  text-align: left;
 }
 
 .carro-view__info {
@@ -221,18 +263,23 @@
 }
 
 .carro-view__vehicle {
-  margin: 8px 0 4px;
-  font-size: 1.125rem;
+  margin: 6px 0 4px;
+  font-size: 1rem;
+  line-height: 1.3;
 }
 
 .carro-view__driver {
-  margin: 0 0 8px;
-  font-size: 0.9375rem;
+  margin: 0 0 10px;
+  font-size: 0.875rem;
+  line-height: 1.35;
   color: var(--text-muted);
 }
 
 .carro-view__hint {
   margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--text-muted);
 }
 
 .carro-view__form-panel {
