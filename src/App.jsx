@@ -22,6 +22,9 @@ import {
   filterReservasPorUnidade,
   isMultiusoSlotBlocked,
   findMultiusoBloqueioRange,
+  salaRowLabelReuniao,
+  formatQtdPessoasDisplay,
+  countUniqueParticipantesPorSalaDia,
 } from './reservasUtils'
 import { useReservas } from './ReservasContext.jsx'
 import BmjLogo from './components/BmjLogo.jsx'
@@ -158,6 +161,14 @@ export default function App() {
       findReservationForSlot(reservationsForGrid, sala, slotStart, slotEnd),
     [reservationsForGrid],
   )
+
+  const qtdPessoasPorSalaDia = useMemo(() => {
+    const map = new Map()
+    for (const sala of salasNomes) {
+      map.set(sala, countUniqueParticipantesPorSalaDia(reservations, sala, form.dataInicio))
+    }
+    return map
+  }, [reservations, salasNomes, form.dataInicio])
 
   useEffect(() => {
     if (appUnidade === APP_UNIDADE.CARRO) {
@@ -572,6 +583,9 @@ export default function App() {
               </span>
               <span className="legend__item">Slots de {SLOT_MINUTES} min</span>
               <span className="legend__item legend__item--hint">
+                «QTD Pessoas»: e-mails distintos nos convites das reservas do dia por sala (ex.: 04, 10).
+              </span>
+              <span className="legend__item legend__item--hint">
                 Passe o rato ou clique num horário reservado para ver detalhes
               </span>
             </div>
@@ -584,11 +598,23 @@ export default function App() {
               <table className="availability-grid">
                 <thead>
                   <tr>
-                    <th className="room-head" scope="col">
-                      Sala
+                    <th className="room-head availability-grid__head-salas" rowSpan={2} scope="col">
+                      Salas
                     </th>
+                    <th className="availability-grid__head-qtd" rowSpan={2} scope="col">
+                      QTD Pessoas
+                    </th>
+                    <th
+                      className="availability-grid__head-horarios"
+                      colSpan={TIME_SLOTS.length}
+                      scope="colgroup"
+                    >
+                      Horários
+                    </th>
+                  </tr>
+                  <tr>
                     {TIME_SLOTS.map((s) => (
-                      <th key={s.startMin} scope="col">
+                      <th key={s.startMin} scope="col" className="availability-grid__th-slot">
                         {s.label}
                       </th>
                     ))}
@@ -597,9 +623,15 @@ export default function App() {
                 <tbody>
                   {salasNomes.map((sala) => (
                     <tr key={sala}>
-                      <th className="room-head" scope="row">
-                        {sala}
+                      <th className="room-head availability-grid__sala-cell" scope="row" title={sala}>
+                        {salaRowLabelReuniao(sala)}
                       </th>
+                      <td
+                        className="availability-grid__qtd-cell"
+                        title={`${qtdPessoasPorSalaDia.get(sala) ?? 0} pessoa(s) distinta(s) nos convites do dia`}
+                      >
+                        {formatQtdPessoasDisplay(qtdPessoasPorSalaDia.get(sala) ?? 0)}
+                      </td>
                       {TIME_SLOTS.map((slot) => {
                         const res = getSlotReservation(sala, slot.startMin, slot.endMin)
                         const busy = res != null

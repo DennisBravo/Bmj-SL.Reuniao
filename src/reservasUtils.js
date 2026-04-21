@@ -145,6 +145,30 @@ export function splitParticipantesEmails(raw) {
   return out
 }
 
+/**
+ * Rótulo de linha tipo «Reunião 01» a partir de nomes «Sala 01 – …».
+ * Se não houver padrão «Sala N», devolve o nome completo.
+ */
+export function salaRowLabelReuniao(salaNome) {
+  const m = String(salaNome || '').match(/Sala\s*0*(\d+)/i)
+  if (m) {
+    const n = Number(m[1])
+    if (Number.isFinite(n) && n >= 0) return `Reunião ${pad2(n)}`
+  }
+  return String(salaNome || '').trim() || '—'
+}
+
+/**
+ * Quantidade na coluna «QTD Pessoas»: 0–9 com um zero à esquerda (ex. 4 → 04);
+ * 10–99 sem alteração; ≥100 sem zeros extra (nunca «010» para dez).
+ */
+export function formatQtdPessoasDisplay(n) {
+  const x = Math.max(0, Math.floor(Number(n)) || 0)
+  if (x < 10) return String(x).padStart(2, '0')
+  if (x <= 99) return String(x)
+  return String(Math.min(x, 999))
+}
+
 /** Nomes de cliente(s): linhas, vírgulas ou ponto e vírgula (sem deduplicar). */
 export function splitClienteNomes(raw) {
   const s = String(raw ?? '').trim()
@@ -222,6 +246,20 @@ export const AUDIT_STORAGE_KEY = 'bmj-salareuniao-audit-v1'
 export function reservationCoversDate(r, dateISO) {
   const end = r.dateFim || r.date
   return dateISO >= r.date && dateISO <= end
+}
+
+/** E-mails únicos em participantes, todas as reservas ativas da sala no dia. */
+export function countUniqueParticipantesPorSalaDia(reservations, sala, dateISO) {
+  const list = (reservations || []).filter(
+    (r) => r && !r.deletedAt && r.sala === sala && reservationCoversDate(r, dateISO),
+  )
+  const seen = new Set()
+  for (const r of list) {
+    for (const em of splitParticipantesEmails(r.participantes)) {
+      seen.add(em.toLowerCase())
+    }
+  }
+  return seen.size
 }
 
 /**

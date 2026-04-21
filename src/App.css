@@ -824,10 +824,12 @@
 }
 
 .availability-grid {
+  --availability-sala-w: 104px;
+  --availability-qtd-left: calc(var(--availability-sala-w) + 5px);
   border-collapse: separate;
   border-spacing: 5px;
   width: 100%;
-  min-width: 760px;
+  min-width: 820px;
   font-size: 0.75rem;
 }
 
@@ -846,9 +848,18 @@
   padding: 6px 2px 10px;
   white-space: nowrap;
   position: sticky;
-  top: 0;
   z-index: 2;
   font-size: 0.7rem;
+}
+
+.availability-grid thead tr:first-child th {
+  top: 0;
+}
+
+.availability-grid thead tr:nth-child(2) th.availability-grid__th-slot {
+  top: 2.65rem;
+  padding-top: 4px;
+  padding-bottom: 8px;
 }
 
 .availability-grid .room-head {
@@ -874,6 +885,70 @@
   background: #e2e6ed;
   color: var(--text-muted);
   font-weight: 600;
+}
+
+.availability-grid__head-salas.room-head,
+.availability-grid__sala-cell.room-head {
+  min-width: 0;
+  max-width: 112px;
+  width: var(--availability-sala-w);
+  padding: 8px 8px;
+  box-sizing: border-box;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.availability-grid__head-qtd {
+  position: sticky;
+  left: var(--availability-qtd-left);
+  z-index: 4;
+  width: 56px;
+  min-width: 56px;
+  max-width: 56px;
+  padding: 8px 4px;
+  box-sizing: border-box;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 0.62rem;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: #e2e6ed;
+  border-radius: var(--radius-slot);
+  border: 1px solid #dde1e8;
+}
+
+.availability-grid__head-horarios {
+  text-align: center;
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-bottom: 4px;
+  background: #eef0f4;
+}
+
+.availability-grid__qtd-cell {
+  position: sticky;
+  left: var(--availability-qtd-left);
+  z-index: 2;
+  width: 56px;
+  min-width: 56px;
+  max-width: 56px;
+  padding: 6px 4px;
+  box-sizing: border-box;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  background: #e8ebf0;
+  border-radius: var(--radius-slot);
+  border: 1px solid #dde1e8;
 }
 
 .slot {
