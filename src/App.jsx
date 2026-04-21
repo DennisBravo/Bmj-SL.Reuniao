@@ -474,22 +474,17 @@ export default function App() {
           >
             <BmjLogo />
           </div>
-          <div className="app__header-top-right app__header-grid-nav">
-            <nav className="app__tabs" aria-label="Navegação principal">
-              <span className="app__tab app__tab--active" aria-current="page">
-                {pageTitle}
-              </span>
-            </nav>
+          <nav className="app__header-top-right app__header-grid-nav" aria-label="Navegação principal">
             <NavLink
               to="/recepcao"
               className={({ isActive }) =>
                 `app__user-chip app__rececao-link${isActive ? ' app__user-chip--open' : ''}`
               }
-              title="Área Recepção — mapa, cancelamentos e relatórios"
+              title="Admin Center — mapa semanal, cancelamentos e relatórios"
             >
-              <span className="app__user-chip-label">Recepção</span>
+              <span className="app__user-chip-label">Admin Center</span>
             </NavLink>
-          </div>
+          </nav>
 
           <h1 className="app__title app__header-grid-title">{pageTitle}</h1>
           {!isCarro ? (

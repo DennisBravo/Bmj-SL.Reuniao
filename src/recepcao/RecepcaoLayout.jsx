@@ -13,13 +13,13 @@ const NAV_ITEMS = [
 export default function RecepcaoLayout() {
   return (
     <div className="recepcao-layout">
-      <aside className="recepcao-layout__sidebar no-print" aria-label="Área Recepção">
+      <aside className="recepcao-layout__sidebar no-print" aria-label="Admin Center">
         <Link to="/" className="recepcao-layout__back">
           ← Voltar às reservas
         </Link>
-        <h1 className="recepcao-layout__title">Recepção</h1>
+        <h1 className="recepcao-layout__title">Admin Center</h1>
         <p className="recepcao-layout__subtitle">Operação de salas e relatórios</p>
-        <nav className="recepcao-layout__nav" aria-label="Submenu Recepção">
+        <nav className="recepcao-layout__nav" aria-label="Submenu Admin Center">
           {NAV_ITEMS.map(({ to, label }) => (
             <NavLink
               key={to}
