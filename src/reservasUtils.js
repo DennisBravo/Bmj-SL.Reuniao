@@ -34,6 +34,11 @@ export function buildGridTimeSlots() {
   return slots
 }
 
+/** Grade do carro: igual a `buildGridTimeSlots`, sem a coluna 19:00. */
+export function buildCarGridTimeSlots() {
+  return buildGridTimeSlots().filter((s) => s.startMin !== 19 * 60)
+}
+
 export function pad2(n) {
   return String(n).padStart(2, '0')
 }

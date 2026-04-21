@@ -12,7 +12,7 @@ import {
   CAR_DAY_START_MIN,
   CAR_DAY_END_MIN,
   SLOT_MINUTES,
-  buildGridTimeSlots,
+  buildCarGridTimeSlots,
   filterCarReservationsForUnitOnDate,
   carReservationSlotSummary,
 } from '../reservasUtils'
@@ -31,7 +31,7 @@ const defaultForm = () => ({
   observacoes: '',
 })
 
-const CAR_GRID_SLOTS = buildGridTimeSlots()
+const CAR_GRID_SLOTS = buildCarGridTimeSlots()
 
 const CARRO_UNIDADES_GRADE = [
   { id: 'brasilia', titulo: 'Brasília', unidadeFiltro: 'Brasília' },
@@ -159,10 +159,9 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
   return (
     <div className="carro-view">
       <section className="panel carro-view__info">
-        <h2 className="panel__title carro-view__panel-title">Veículo disponível</h2>
-        <p className="carro-view__vehicle">
-          <strong>{CARRO_VEICULO_LABEL}</strong>
-        </p>
+        <h2 className="carro-view__vehicle-heading">
+          Veículo disponível: <span className="carro-view__vehicle-name">{CARRO_VEICULO_LABEL}</span>
+        </h2>
         <p className="carro-view__driver">
           Motorista: <strong>{CARRO_MOTORISTA_LABEL}</strong>
         </p>
@@ -173,10 +172,8 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
       </section>
 
       <section className="panel panel--grid carro-view__occ-panel">
-        <h2 className="panel__title carro-view__panel-title">Ocupação do veículo por unidade</h2>
-        <p className="carro-view__occ-hint">
-          A grade segue a data escolhida no formulário (intervalo exibido: 08:00–20:00).
-        </p>
+        <h2 className="panel__title carro-view__occ-section-title">Ocupação do veículo por unidade</h2>
+        <p className="carro-view__occ-hint">A grade segue a data escolhida no formulário.</p>
         <div className="carro-view__occ-wrap">
           {CARRO_UNIDADES_GRADE.map((u) => {
             const list = u.id === 'brasilia' ? carrosBsb : carrosSp
@@ -190,12 +187,7 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
                   >
                     <thead>
                       <tr className="availability-grid__head-row-primary">
-                        <th
-                          className="room-head availability-grid__head-carro-corner"
-                          rowSpan={2}
-                          scope="col"
-                          aria-hidden="true"
-                        />
+                        <th className="availability-grid__head-carro-spacer" rowSpan={2} scope="col" aria-hidden="true" />
                         <th
                           className="availability-grid__head-horarios availability-grid__head-title availability-grid__head-title--carro-horarios"
                           colSpan={CAR_GRID_SLOTS.length}
@@ -248,7 +240,7 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
       </section>
 
       <section className="panel form-panel carro-view__form-panel">
-        <h2 className="panel__title carro-view__panel-title">Nova reserva de carro</h2>
+        <h2 className="panel__title carro-view__occ-section-title">Nova reserva de carro</h2>
         {saveSuccess ? (
           <p className="form__success" role="status">
             Reserva de carro registada com sucesso.
