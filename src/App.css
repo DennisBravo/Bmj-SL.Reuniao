@@ -824,12 +824,12 @@
 }
 
 .availability-grid {
-  --availability-sala-w: 104px;
+  --availability-sala-w: 96px;
   --availability-qtd-left: calc(var(--availability-sala-w) + 5px);
   border-collapse: separate;
   border-spacing: 5px;
   width: 100%;
-  min-width: 820px;
+  min-width: 740px;
   font-size: 0.75rem;
 }
 
@@ -890,7 +890,7 @@
 .availability-grid__head-salas.room-head,
 .availability-grid__sala-cell.room-head {
   min-width: 0;
-  max-width: 112px;
+  max-width: 104px;
   width: var(--availability-sala-w);
   padding: 8px 8px;
   box-sizing: border-box;
@@ -903,9 +903,9 @@
   position: sticky;
   left: var(--availability-qtd-left);
   z-index: 4;
-  width: 56px;
-  min-width: 56px;
-  max-width: 56px;
+  width: 64px;
+  min-width: 64px;
+  max-width: 64px;
   padding: 8px 4px;
   box-sizing: border-box;
   text-align: center;
@@ -935,9 +935,9 @@
   position: sticky;
   left: var(--availability-qtd-left);
   z-index: 2;
-  width: 56px;
-  min-width: 56px;
-  max-width: 56px;
+  width: 64px;
+  min-width: 64px;
+  max-width: 64px;
   padding: 6px 4px;
   box-sizing: border-box;
   text-align: center;

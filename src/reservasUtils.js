@@ -22,6 +22,9 @@ export const SLOT_MINUTES = 30
 export const DAY_START_MIN = 7 * 60
 export const DAY_END_MIN = 20 * 60
 
+/** Início da **grade** de disponibilidade (primeiro slot = 08:00). Reservas continuam limitadas por `DAY_START_MIN`. */
+export const DAY_GRID_START_MIN = 8 * 60
+
 export function pad2(n) {
   return String(n).padStart(2, '0')
 }
@@ -146,16 +149,17 @@ export function splitParticipantesEmails(raw) {
 }
 
 /**
- * Rótulo de linha tipo «Reunião 01» a partir de nomes «Sala 01 – …».
- * Se não houver padrão «Sala N», devolve o nome completo.
+ * Nome na grade / selects: remove o prefixo «Sala » no início (ex.: «Sala Reunião 01» → «Reunião 01»).
  */
+export function salaNomeGradeExibicao(salaNome) {
+  return String(salaNome || '')
+    .replace(/^\s*Sala\s+/i, '')
+    .trim() || '—'
+}
+
+/** @deprecated Use `salaNomeGradeExibicao`. */
 export function salaRowLabelReuniao(salaNome) {
-  const m = String(salaNome || '').match(/Sala\s*0*(\d+)/i)
-  if (m) {
-    const n = Number(m[1])
-    if (Number.isFinite(n) && n >= 0) return `Reunião ${pad2(n)}`
-  }
-  return String(salaNome || '').trim() || '—'
+  return salaNomeGradeExibicao(salaNome)
 }
 
 /**
@@ -420,6 +424,68 @@ export function sharePointUnidadeFromAppId(appUnidadeId) {
   if (appUnidadeId === APP_UNIDADE.BRASILIA) return 'Brasília'
   if (appUnidadeId === APP_UNIDADE.SAO_PAULO) return 'São Paulo'
   return ''
+}
+
+function normCapKey(s) {
+  return String(s || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
+const CAP_QTD_BRASILIA_RAW = Object.freeze({
+  'Espaço Multiuso': '50-100',
+  'Reunião 01': '04',
+  'Reunião 02': '04',
+  'Reunião 03': '06',
+  'Reunião 04': '10',
+  'Reunião 05': '06',
+  'Reunião 06': '08',
+  'Reunião 07': '04',
+  'Reunião 08': '04',
+  'Reunião 09': '04',
+  'Reunião 10': '04',
+  'Reunião 11': '04',
+})
+
+const CAP_QTD_SAO_PAULO_RAW = Object.freeze({
+  'Sala Principal': '25',
+  Principal: '25',
+  'Reunião 01': '08',
+  'Reunião 02': '09',
+  'Aquário 01': '02',
+  'Aquário 02': '02',
+})
+
+function buildCapLookup(raw) {
+  const m = new Map()
+  for (const [label, value] of Object.entries(raw)) {
+    const keys = new Set([
+      normCapKey(label),
+      normCapKey(label.replace(/^\s*Sala\s+/i, '')),
+    ])
+    for (const k of keys) {
+      if (k) m.set(k, value)
+    }
+  }
+  return m
+}
+
+const CAP_LOOKUP_BRASILIA = buildCapLookup(CAP_QTD_BRASILIA_RAW)
+const CAP_LOOKUP_SAO_PAULO = buildCapLookup(CAP_QTD_SAO_PAULO_RAW)
+
+/** Capacidade «QTD Pessoas» estática por unidade (dados operação BMJ). */
+export function capacidadeQtdPessoasExibicao(salaNome, appUnidadeId) {
+  if (!appUnidadeId || appUnidadeId === APP_UNIDADE.CARRO) return '—'
+  const map =
+    appUnidadeId === APP_UNIDADE.SAO_PAULO ? CAP_LOOKUP_SAO_PAULO : CAP_LOOKUP_BRASILIA
+  const tries = [normCapKey(salaNome), normCapKey(salaNomeGradeExibicao(salaNome))]
+  for (const k of tries) {
+    if (k && map.has(k)) return map.get(k)
+  }
+  return '—'
 }
 
 /** Nome exibido na lista para a sala «Espaço Multiuso» (Brasília). */

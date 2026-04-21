@@ -5,6 +5,7 @@ import {
   SLOT_MINUTES,
   DAY_START_MIN,
   DAY_END_MIN,
+  DAY_GRID_START_MIN,
   timeToMinutes,
   minutesToTime,
   isValidEmail,
@@ -22,9 +23,8 @@ import {
   filterReservasPorUnidade,
   isMultiusoSlotBlocked,
   findMultiusoBloqueioRange,
-  salaRowLabelReuniao,
-  formatQtdPessoasDisplay,
-  countUniqueParticipantesPorSalaDia,
+  salaNomeGradeExibicao,
+  capacidadeQtdPessoasExibicao,
 } from './reservasUtils'
 import { useReservas } from './ReservasContext.jsx'
 import BmjLogo from './components/BmjLogo.jsx'
@@ -39,7 +39,7 @@ import './App.css'
 
 function buildTimeSlots() {
   const slots = []
-  for (let m = DAY_START_MIN; m < DAY_END_MIN; m += SLOT_MINUTES) {
+  for (let m = DAY_GRID_START_MIN; m < DAY_END_MIN; m += SLOT_MINUTES) {
     slots.push({ startMin: m, endMin: m + SLOT_MINUTES, label: minutesToTime(m) })
   }
   return slots
@@ -162,13 +162,13 @@ export default function App() {
     [reservationsForGrid],
   )
 
-  const qtdPessoasPorSalaDia = useMemo(() => {
+  const qtdCapacidadePorSala = useMemo(() => {
     const map = new Map()
     for (const sala of salasNomes) {
-      map.set(sala, countUniqueParticipantesPorSalaDia(reservations, sala, form.dataInicio))
+      map.set(sala, capacidadeQtdPessoasExibicao(sala, appUnidade))
     }
     return map
-  }, [reservations, salasNomes, form.dataInicio])
+  }, [salasNomes, appUnidade])
 
   useEffect(() => {
     if (appUnidade === APP_UNIDADE.CARRO) {
@@ -583,7 +583,7 @@ export default function App() {
               </span>
               <span className="legend__item">Slots de {SLOT_MINUTES} min</span>
               <span className="legend__item legend__item--hint">
-                «QTD Pessoas»: e-mails distintos nos convites das reservas do dia por sala (ex.: 04, 10).
+                «QTD Pessoas»: capacidade máxima da sala (dados BMJ; ex.: 04, 10, 50-100).
               </span>
               <span className="legend__item legend__item--hint">
                 Passe o rato ou clique num horário reservado para ver detalhes
@@ -624,13 +624,13 @@ export default function App() {
                   {salasNomes.map((sala) => (
                     <tr key={sala}>
                       <th className="room-head availability-grid__sala-cell" scope="row" title={sala}>
-                        {salaRowLabelReuniao(sala)}
+                        {salaNomeGradeExibicao(sala)}
                       </th>
                       <td
                         className="availability-grid__qtd-cell"
-                        title={`${qtdPessoasPorSalaDia.get(sala) ?? 0} pessoa(s) distinta(s) nos convites do dia`}
+                        title={`Capacidade: ${qtdCapacidadePorSala.get(sala) ?? '—'}`}
                       >
-                        {formatQtdPessoasDisplay(qtdPessoasPorSalaDia.get(sala) ?? 0)}
+                        {qtdCapacidadePorSala.get(sala) ?? '—'}
                       </td>
                       {TIME_SLOTS.map((slot) => {
                         const res = getSlotReservation(sala, slot.startMin, slot.endMin)
@@ -679,8 +679,8 @@ export default function App() {
             <section className="panel form-panel">
               <h2>Nova reserva</h2>
               <p className="hint">
-                Horários no intervalo exibido na grade. O sistema bloqueia sobreposição na mesma sala
-                e data.
+                A grade mostra horários a partir das 08:00. O sistema bloqueia sobreposição na mesma
+                sala e data.
               </p>
               <form className="form" onSubmit={handleSubmit}>
                 {saveSuccess ? (
@@ -701,7 +701,7 @@ export default function App() {
                       >
                         {salasNomes.map((s) => (
                           <option key={s} value={s}>
-                            {s}
+                            {salaNomeGradeExibicao(s)}
                           </option>
                         ))}
                       </select>
