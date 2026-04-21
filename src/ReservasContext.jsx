@@ -1,10 +1,17 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { appendAudit, loadReservations, saveReservations, isReservationActive } from './reservasUtils'
+import {
+  appendAudit,
+  loadReservations,
+  saveReservations,
+  isReservationActive,
+  CARRO_CONFLICT_SALA_KEY,
+} from './reservasUtils'
 import { canAlterReservation, normalizeEmail } from './envConfig.js'
 
 const ReservasContext = createContext(null)
 
 const RESERVAS_API_URL = import.meta.env.VITE_RESERVAS_API_URL || '/api/reservas'
+const CARROS_API_URL = import.meta.env.VITE_CARROS_API_URL || '/api/carros-reservas'
 
 function emailFromSharePointFields(f) {
   if (!f || typeof f !== 'object') return ''
@@ -40,11 +47,47 @@ function graphListItemToReservation(item) {
     nomeCliente: f.NomeCliente != null ? String(f.NomeCliente).trim() : '',
     participantes: f.ParticipantesTexto || '',
     observacoes: f.Observacao || '',
+    unidade: f.Unidade != null ? String(f.Unidade).trim() : '',
     status: f.Status || 'ativo',
     criadoVia: f.CriadoVia || '',
     createdAt: item.createdDateTime || '',
     updatedAt: item.lastModifiedDateTime || '',
     deletedAt: f.DeletadoEm || null,
+    deletedByEmail: f.DeletadoPorEmail || null,
+    createdByEmail: email,
+  }
+}
+
+/** Item da lista CarrosReserva_BMJ → objeto usado na app (conflitos via `sala` fixa). */
+function graphListItemToCarReservation(item) {
+  const f = item.fields || {}
+  const email = emailFromSharePointFields(f)
+  const st = (f.Status != null ? String(f.Status) : 'ativo').trim().toLowerCase()
+  const soft =
+    f.DeletadoEm ||
+    (st === 'cancelado' || st === 'inativo' ? item.lastModifiedDateTime || new Date().toISOString() : null)
+  return {
+    graphItemId: String(item.id),
+    id: f.ReservaID || String(item.id),
+    tipoReserva: 'carro',
+    sala: CARRO_CONFLICT_SALA_KEY,
+    date: f.DataReserva ? f.DataReserva.slice(0, 10) : '',
+    dateFim: null,
+    horaInicio: f.HoraInicio || '',
+    horaFim: f['Hor_x00e1_riodeFim'] || f.HoraFim || '',
+    titulo: f.Title || '',
+    destino: f.Destino != null ? String(f.Destino).trim() : '',
+    motivo: f.Motivo != null ? String(f.Motivo).trim() : '',
+    solicitante: f.NomedoSolicitante || '',
+    emailSolicitante: email,
+    observacoes: f.Observacao || '',
+    veiculo: f.Veiculo != null ? String(f.Veiculo).trim() : '',
+    motorista: f.Motorista != null ? String(f.Motorista).trim() : '',
+    status: f.Status || 'ativo',
+    criadoVia: f.CriadoVia || '',
+    createdAt: item.createdDateTime || '',
+    updatedAt: item.lastModifiedDateTime || '',
+    deletedAt: soft || null,
     deletedByEmail: f.DeletadoPorEmail || null,
     createdByEmail: email,
   }
@@ -67,12 +110,20 @@ function mergeLocalCancellations(prevList, serverList) {
 
 export function ReservasProvider({ children }) {
   const [allReservations, setAllReservations] = useState(() => [])
+  const [allCarReservations, setAllCarReservations] = useState(() => [])
   const [loading, setLoading] = useState(true)
+  const [carLoading, setCarLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [carError, setCarError] = useState(null)
 
   const reservations = useMemo(
     () => allReservations.filter(isReservationActive),
     [allReservations],
+  )
+
+  const carReservations = useMemo(
+    () => allCarReservations.filter(isReservationActive),
+    [allCarReservations],
   )
 
   const loadFromServer = useCallback(
@@ -123,12 +174,53 @@ export function ReservasProvider({ children }) {
     }
   }, [loadFromServer])
 
+  const loadCarReservationsFromServer = useCallback(async () => {
+    setCarError(null)
+    setCarLoading(true)
+    try {
+      const res = await fetch(CARROS_API_URL, { method: 'GET' })
+      const text = await res.text()
+      let data = {}
+      try {
+        data = text ? JSON.parse(text) : {}
+      } catch {
+        data = {}
+      }
+      if (!res.ok) {
+        const msg = data.detail || data.error || `Erro ${res.status} ao carregar reservas de carro.`
+        throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg))
+      }
+      const items = Array.isArray(data.items) ? data.items : []
+      setAllCarReservations(items.map(graphListItemToCarReservation).filter(Boolean))
+      return true
+    } catch (e) {
+      const msg = e.message || 'Não foi possível carregar reservas de carro.'
+      setCarError(msg)
+      setAllCarReservations([])
+      return false
+    } finally {
+      setCarLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      await loadCarReservationsFromServer()
+      if (cancelled) return
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [loadCarReservationsFromServer])
+
   useEffect(() => {
     if (loading) return
     saveReservations(allReservations)
   }, [allReservations, loading])
 
   const clearError = useCallback(() => setError(null), [])
+  const clearCarError = useCallback(() => setCarError(null), [])
 
   const reloadReservations = useCallback(
     () => loadFromServer({ useFallbackOnError: true, mergeCancellations: true }),
@@ -207,6 +299,42 @@ export function ReservasProvider({ children }) {
     [loadFromServer],
   )
 
+  const addCarReservation = useCallback(
+    async (nova) => {
+      setCarError(null)
+      setCarLoading(true)
+      try {
+        const res = await fetch(CARROS_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(nova),
+        })
+        const text = await res.text()
+        let data = {}
+        try {
+          data = text ? JSON.parse(text) : {}
+        } catch {
+          data = {}
+        }
+        if (!res.ok) {
+          const msg = data.detail || data.error || `Erro ${res.status} ao criar reserva de carro.`
+          throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg))
+        }
+        const ok = await loadCarReservationsFromServer()
+        if (!ok) {
+          throw new Error('Reserva criada, mas não foi possível recarregar a lista de carros.')
+        }
+      } catch (e) {
+        const msg = e.message || 'Não foi possível criar a reserva de carro.'
+        setCarError(msg)
+        throw e
+      } finally {
+        setCarLoading(false)
+      }
+    },
+    [loadCarReservationsFromServer],
+  )
+
   const removeReservation = useCallback((id) => {
     setAllReservations((prev) => prev.filter((r) => r.id !== id))
   }, [])
@@ -266,6 +394,13 @@ export function ReservasProvider({ children }) {
       error,
       clearError,
       reloadReservations,
+      carReservations,
+      allCarReservations,
+      addCarReservation,
+      carLoading,
+      carError,
+      clearCarError,
+      reloadCarReservations: loadCarReservationsFromServer,
     }),
     [
       reservations,
@@ -278,6 +413,13 @@ export function ReservasProvider({ children }) {
       error,
       clearError,
       reloadReservations,
+      carReservations,
+      allCarReservations,
+      addCarReservation,
+      carLoading,
+      carError,
+      clearCarError,
+      loadCarReservationsFromServer,
     ],
   )
 

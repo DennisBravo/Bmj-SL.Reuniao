@@ -190,6 +190,11 @@ function buildListFields(body) {
     fields.NomeCliente = String(body.nomeCliente).trim()
   }
 
+  const skipUnidade = process.env.SHAREPOINT_SKIP_UNIDADE_FIELD === '1'
+  if (!skipUnidade && body.unidade != null && String(body.unidade).trim() !== '') {
+    fields.Unidade = String(body.unidade).trim()
+  }
+
   return fields
 }
 

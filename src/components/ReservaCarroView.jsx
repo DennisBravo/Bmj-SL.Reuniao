@@ -1,0 +1,271 @@
+import { useState } from 'react'
+import {
+  todayISO,
+  timeToMinutes,
+  minutesToTime,
+  isValidEmail,
+  findReservationConflictRange,
+  CARRO_CONFLICT_SALA_KEY,
+  CARRO_VEICULO_LABEL,
+  CARRO_MOTORISTA_LABEL,
+  CAR_DAY_START_MIN,
+  CAR_DAY_END_MIN,
+  SLOT_MINUTES,
+} from '../reservasUtils'
+import { M365EmailAutocomplete } from './M365UserAutocompleteFields.jsx'
+import { getCurrentUserEmail, normalizeEmail } from '../envConfig.js'
+
+const defaultForm = () => ({
+  date: todayISO(),
+  horaInicio: '09:00',
+  horaFim: '10:00',
+  destino: '',
+  motivo: '',
+  solicitante: '',
+  emailSolicitante: '',
+  observacoes: '',
+})
+
+export default function ReservaCarroView({ carReservations, addCarReservation, carLoading, carError, clearCarError }) {
+  const [form, setForm] = useState(defaultForm)
+  const [formError, setFormError] = useState('')
+  const [saveSuccess, setSaveSuccess] = useState(false)
+
+  function updateField(key, v) {
+    setForm((f) => ({ ...f, [key]: v }))
+    setFormError('')
+    clearCarError()
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setFormError('')
+    setSaveSuccess(false)
+    clearCarError()
+
+    const destino = form.destino.trim()
+    const motivo = form.motivo.trim()
+    const solicitante = form.solicitante.trim()
+    const emailSolicitante = form.emailSolicitante.trim()
+    const observacoes = form.observacoes.trim()
+
+    if (!destino) {
+      setFormError('Informe o destino.')
+      return
+    }
+    if (!motivo) {
+      setFormError('Informe o motivo.')
+      return
+    }
+    if (!solicitante) {
+      setFormError('Informe o nome do solicitante.')
+      return
+    }
+    if (!emailSolicitante || !isValidEmail(emailSolicitante)) {
+      setFormError('Informe um e-mail válido do solicitante.')
+      return
+    }
+
+    const date = (form.date || '').trim()
+    if (!date) {
+      setFormError('Informe a data.')
+      return
+    }
+
+    const startMin = timeToMinutes(form.horaInicio)
+    const endMin = timeToMinutes(form.horaFim)
+    if (Number.isNaN(startMin) || Number.isNaN(endMin) || endMin <= startMin) {
+      setFormError('Horários inválidos: a hora de fim deve ser depois da de início.')
+      return
+    }
+    if (startMin < CAR_DAY_START_MIN || endMin > CAR_DAY_END_MIN) {
+      setFormError(
+        `O carro só pode ser reservado entre ${minutesToTime(CAR_DAY_START_MIN)} e ${minutesToTime(CAR_DAY_END_MIN)}.`,
+      )
+      return
+    }
+
+    const conflict = findReservationConflictRange(
+      CARRO_CONFLICT_SALA_KEY,
+      date,
+      date,
+      startMin,
+      endMin,
+      carReservations,
+      null,
+    )
+    if (conflict) {
+      setFormError(conflict.replace('nesta sala', 'neste horário para o carro'))
+      return
+    }
+
+    const now = new Date().toISOString()
+    const createdByEmail =
+      normalizeEmail(getCurrentUserEmail() || emailSolicitante) || normalizeEmail(emailSolicitante)
+
+    const titulo = `Carro — ${destino}`.slice(0, 255)
+    const payload = {
+      id: crypto.randomUUID(),
+      date,
+      horaInicio: form.horaInicio,
+      horaFim: form.horaFim,
+      titulo,
+      destino,
+      motivo,
+      solicitante,
+      emailSolicitante,
+      observacoes,
+      veiculo: CARRO_VEICULO_LABEL,
+      motorista: CARRO_MOTORISTA_LABEL,
+      criadoEm: now,
+      createdAt: now,
+      updatedAt: now,
+      createdByEmail,
+      deletedAt: null,
+      deletedByEmail: null,
+    }
+
+    try {
+      await addCarReservation(payload)
+      setForm(defaultForm())
+      setSaveSuccess(true)
+    } catch {
+      setFormError('Não foi possível guardar. Tente novamente.')
+    }
+  }
+
+  return (
+    <div className="carro-view">
+      <section className="panel carro-view__info">
+        <h2 className="panel__title">Veículo disponível</h2>
+        <p className="carro-view__vehicle">
+          <strong>{CARRO_VEICULO_LABEL}</strong>
+        </p>
+        <p className="carro-view__driver">
+          Motorista: <strong>{CARRO_MOTORISTA_LABEL}</strong>
+        </p>
+        <p className="hint carro-view__hint">
+          Horário permitido: {minutesToTime(CAR_DAY_START_MIN)} às {minutesToTime(CAR_DAY_END_MIN)}. Slots de{' '}
+          {SLOT_MINUTES} min. Não é permitido sobrepor reservas no mesmo horário.
+        </p>
+      </section>
+
+      <section className="panel form-panel carro-view__form-panel">
+        <h2 className="panel__title">Nova reserva de carro</h2>
+        {saveSuccess ? (
+          <p className="form__success" role="status">
+            Reserva de carro registada com sucesso.
+          </p>
+        ) : null}
+        {formError ? <p className="form__error">{formError}</p> : null}
+        {carError ? (
+          <div className="form__error" role="alert">
+            {carError}{' '}
+            <button type="button" className="btn-ghost" onClick={clearCarError}>
+              Fechar
+            </button>
+          </div>
+        ) : null}
+
+        <form className="form" onSubmit={handleSubmit}>
+          <div className="form__grid-2col">
+            <div className="form__col">
+              <div className="form__row">
+                <label htmlFor="car-data">Data</label>
+                <input
+                  id="car-data"
+                  type="date"
+                  value={form.date}
+                  onChange={(e) => updateField('date', e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form__row form__row--2">
+                <div className="form__row">
+                  <label htmlFor="car-ini">Hora início</label>
+                  <input
+                    id="car-ini"
+                    type="time"
+                    step={SLOT_MINUTES * 60}
+                    value={form.horaInicio}
+                    onChange={(e) => updateField('horaInicio', e.target.value)}
+                  />
+                </div>
+                <div className="form__row">
+                  <label htmlFor="car-fim">Hora fim</label>
+                  <input
+                    id="car-fim"
+                    type="time"
+                    step={SLOT_MINUTES * 60}
+                    value={form.horaFim}
+                    onChange={(e) => updateField('horaFim', e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="form__row">
+                <label htmlFor="car-destino">Destino</label>
+                <input
+                  id="car-destino"
+                  type="text"
+                  autoComplete="off"
+                  value={form.destino}
+                  onChange={(e) => updateField('destino', e.target.value)}
+                  placeholder="Ex.: Ministério da Saúde"
+                />
+              </div>
+              <div className="form__row">
+                <label htmlFor="car-motivo">Motivo</label>
+                <input
+                  id="car-motivo"
+                  type="text"
+                  autoComplete="off"
+                  value={form.motivo}
+                  onChange={(e) => updateField('motivo', e.target.value)}
+                  placeholder="Ex.: Reunião externa"
+                />
+              </div>
+            </div>
+            <div className="form__col">
+              <div className="form__row">
+                <label htmlFor="car-solicitante">Nome do solicitante</label>
+                <input
+                  id="car-solicitante"
+                  type="text"
+                  autoComplete="name"
+                  value={form.solicitante}
+                  onChange={(e) => updateField('solicitante', e.target.value)}
+                />
+              </div>
+              <div className="form__row">
+                <label htmlFor="car-email">E-mail do solicitante</label>
+                <M365EmailAutocomplete
+                  id="car-email"
+                  required
+                  placeholder="nome@bmj.com.br"
+                  value={form.emailSolicitante}
+                  onValueChange={(v) => updateField('emailSolicitante', v)}
+                />
+              </div>
+              <div className="form__row">
+                <label htmlFor="car-obs">Observações</label>
+                <textarea
+                  id="car-obs"
+                  className="form__textarea form__textarea--observacoes"
+                  rows={4}
+                  value={form.observacoes}
+                  onChange={(e) => updateField('observacoes', e.target.value)}
+                  placeholder="Detalhes adicionais (opcional)"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="form__actions">
+            <button type="submit" className="btn-primary" disabled={carLoading}>
+              {carLoading ? 'A guardar…' : 'Reservar carro'}
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  )
+}

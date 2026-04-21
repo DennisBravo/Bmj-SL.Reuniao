@@ -17,12 +17,19 @@ import {
   reservationTipoReuniao,
   participantesResumoLabel,
   clientesResumoLabel,
+  APP_UNIDADE,
+  sharePointUnidadeFromAppId,
+  filterReservasPorUnidade,
+  isMultiusoSlotBlocked,
+  findMultiusoBloqueioRange,
 } from './reservasUtils'
 import { useReservas } from './ReservasContext.jsx'
 import BmjLogo from './components/BmjLogo.jsx'
 import ReservaSlotDetalheModal from './components/ReservaSlotDetalheModal.jsx'
 import { M365EmailAutocomplete, M365ParticipantesAutocomplete } from './components/M365UserAutocompleteFields.jsx'
 import ReservaFormTextModal from './components/ReservaFormTextModal.jsx'
+import UnidadeSelector from './components/UnidadeSelector.jsx'
+import ReservaCarroView from './components/ReservaCarroView.jsx'
 import { getCurrentUserEmail, normalizeEmail } from './envConfig.js'
 import { notifyTeamsNewReservationWithNotes } from './teamsWebhook.js'
 import './App.css'
@@ -37,11 +44,30 @@ function buildTimeSlots() {
 
 const TIME_SLOTS = buildTimeSlots()
 
+const SALAS_CATALOGO_API =
+  import.meta.env.VITE_SALAS_CATALOGO_API_URL || import.meta.env.VITE_SALAS_CATALOG_API_URL || '/api/salas-catalogo'
+
 /** Desloca a logo para a esquerda (px). Negativo = esquerda. ~113px ≈ 3cm em ecrã típico. */
 const HEADER_LOGO_SHIFT_X_PX = -266
 
 export default function App() {
-  const { reservations, addReservation, loading, error, clearError } = useReservas()
+  const {
+    reservations,
+    addReservation,
+    loading,
+    error,
+    clearError,
+    carReservations,
+    addCarReservation,
+    carLoading,
+    carError,
+    clearCarError,
+  } = useReservas()
+
+  const [appUnidade, setAppUnidade] = useState(APP_UNIDADE.BRASILIA)
+  const [salasCatalog, setSalasCatalog] = useState(null)
+  const [catalogLoading, setCatalogLoading] = useState(false)
+  const [catalogError, setCatalogError] = useState('')
 
   const [form, setForm] = useState({
     sala: SALAS[0],
@@ -99,16 +125,90 @@ export default function App() {
     return () => window.clearTimeout(t)
   }, [saveSuccess])
 
-  const reservationsForDay = useMemo(
-    () => reservations.filter((r) => reservationCoversDate(r, form.dataInicio)),
-    [reservations, form.dataInicio],
-  )
+  const salasNomes = useMemo(() => {
+    if (appUnidade === APP_UNIDADE.CARRO) return []
+    if (Array.isArray(salasCatalog) && salasCatalog.length > 0) {
+      return salasCatalog
+        .map((x) => (typeof x === 'string' ? x : String(x.nome || '').trim()))
+        .filter(Boolean)
+    }
+    if (appUnidade === APP_UNIDADE.BRASILIA) return [...SALAS]
+    return []
+  }, [appUnidade, salasCatalog])
+
+  const unidadeSpLabel = sharePointUnidadeFromAppId(appUnidade)
+
+  const reservationsConflictScope = useMemo(() => {
+    if (appUnidade === APP_UNIDADE.CARRO) return []
+    return reservations.filter((r) => {
+      const u = String(r.unidade || '').trim()
+      if (!u) return true
+      return u === unidadeSpLabel
+    })
+  }, [reservations, appUnidade, unidadeSpLabel])
+
+  const reservationsForGrid = useMemo(() => {
+    if (appUnidade === APP_UNIDADE.CARRO) return []
+    const byUnit = filterReservasPorUnidade(reservations, salasNomes, unidadeSpLabel)
+    return byUnit.filter((r) => reservationCoversDate(r, form.dataInicio))
+  }, [reservations, salasNomes, unidadeSpLabel, form.dataInicio, appUnidade])
 
   const getSlotReservation = useCallback(
     (sala, slotStart, slotEnd) =>
-      findReservationForSlot(reservationsForDay, sala, slotStart, slotEnd),
-    [reservationsForDay],
+      findReservationForSlot(reservationsForGrid, sala, slotStart, slotEnd),
+    [reservationsForGrid],
   )
+
+  useEffect(() => {
+    if (appUnidade === APP_UNIDADE.CARRO) {
+      setSalasCatalog(null)
+      setCatalogError('')
+      setCatalogLoading(false)
+      return
+    }
+    let cancelled = false
+    const label = sharePointUnidadeFromAppId(appUnidade)
+    setCatalogLoading(true)
+    setCatalogError('')
+    ;(async () => {
+      try {
+        const res = await fetch(`${SALAS_CATALOGO_API}?unidade=${encodeURIComponent(label)}`)
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          throw new Error(
+            typeof data.detail === 'string'
+              ? data.detail
+              : typeof data.error === 'string'
+                ? data.error
+                : `Erro ${res.status}`,
+          )
+        }
+        const list = Array.isArray(data.salas) ? data.salas : []
+        if (!cancelled) {
+          setSalasCatalog(list)
+          if (list.length === 0) {
+            setCatalogError(`Nenhuma sala no catálogo para «${label}». Verifique a lista SharePoint.`)
+          }
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setCatalogError(e.message || 'Não foi possível carregar o catálogo de salas.')
+          setSalasCatalog([])
+        }
+      } finally {
+        if (!cancelled) setCatalogLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [appUnidade])
+
+  useEffect(() => {
+    if (appUnidade === APP_UNIDADE.CARRO) return
+    if (!salasNomes.length) return
+    setForm((f) => (salasNomes.includes(f.sala) ? f : { ...f, sala: salasNomes[0] }))
+  }, [salasNomes, appUnidade])
 
   useEffect(() => {
     setSlotHoverPreview(null)
@@ -286,13 +386,19 @@ export default function App() {
       return
     }
 
+    const multiusoMsg = findMultiusoBloqueioRange(form.sala, dataInicio, dataFim, startMin, endMin)
+    if (multiusoMsg) {
+      setFormError(multiusoMsg)
+      return
+    }
+
     const conflict = findReservationConflictRange(
       form.sala,
       dataInicio,
       dataFim,
       startMin,
       endMin,
-      reservations,
+      reservationsConflictScope,
       null,
     )
     if (conflict) {
@@ -308,6 +414,7 @@ export default function App() {
     const novo = {
       id: crypto.randomUUID(),
       sala: form.sala,
+      unidade: unidadeSpLabel,
       date: dataInicio,
       ...(dataFim !== dataInicio ? { dateFim: dataFim } : {}),
       horaInicio: form.horaInicio,
@@ -354,6 +461,9 @@ export default function App() {
     }
   }
 
+  const isCarro = appUnidade === APP_UNIDADE.CARRO
+  const pageTitle = isCarro ? 'Reserva de carro' : 'Reserva de salas'
+
   return (
     <div className="app">
       <header className="app__header">
@@ -367,7 +477,7 @@ export default function App() {
           <div className="app__header-top-right app__header-grid-nav">
             <nav className="app__tabs" aria-label="Navegação principal">
               <span className="app__tab app__tab--active" aria-current="page">
-                Reserva de salas
+                {pageTitle}
               </span>
             </nav>
             <NavLink
@@ -381,24 +491,40 @@ export default function App() {
             </NavLink>
           </div>
 
-          <h1 className="app__title app__header-grid-title">Reserva de salas</h1>
-          <div className="app__date app__date--title-row app__header-grid-date">
-            <label htmlFor="dia">Data início</label>
-            <input
-              id="dia"
-              type="date"
-              value={form.dataInicio}
-              onChange={(e) => updateField('dataInicio', e.target.value)}
-            />
-          </div>
+          <h1 className="app__title app__header-grid-title">{pageTitle}</h1>
+          {!isCarro ? (
+            <div className="app__date app__date--title-row app__header-grid-date">
+              <label htmlFor="dia">Data início</label>
+              <input
+                id="dia"
+                type="date"
+                value={form.dataInicio}
+                onChange={(e) => updateField('dataInicio', e.target.value)}
+              />
+            </div>
+          ) : (
+            <div className="app__header-grid-date" aria-hidden="true" />
+          )}
 
           <p className="app__subtitle app__header-grid-subtitle">
-            Faça sua reserva e evite conflitos de horário nas salas.
+            {isCarro
+              ? 'Reserve o veículo institucional no horário disponível.'
+              : 'Escolha a unidade, consulte a grade e evite conflitos de horário.'}
           </p>
           {loading && reservations.length === 0 ? (
             <p className="app__subtitle app__header-grid-subtitle app__sync-hint" aria-live="polite">
               A carregar reservas…
             </p>
+          ) : null}
+          {!isCarro && catalogLoading ? (
+            <p className="app__subtitle app__header-grid-subtitle app__sync-hint" aria-live="polite">
+              A carregar catálogo de salas…
+            </p>
+          ) : null}
+          {!isCarro && catalogError ? (
+            <div className="form__error app__context-alert" role="alert" style={{ maxWidth: 560, marginTop: 8 }}>
+              {catalogError}
+            </div>
           ) : null}
           {error ? (
             <div
@@ -413,8 +539,22 @@ export default function App() {
             </div>
           ) : null}
         </div>
+        <div className="app__header-unidade">
+          <UnidadeSelector value={appUnidade} onChange={setAppUnidade} disabled={false} />
+        </div>
       </header>
 
+      {isCarro ? (
+        <div className="app__layout app__layout--carro">
+          <ReservaCarroView
+            carReservations={carReservations}
+            addCarReservation={addCarReservation}
+            carLoading={carLoading}
+            carError={carError}
+            clearCarError={clearCarError}
+          />
+        </div>
+      ) : (
       <div className="app__layout">
           <section className="panel panel--grid">
             <h2 className="panel__title">Disponibilidade por sala e horário</h2>
@@ -431,12 +571,21 @@ export default function App() {
                 <span className="legend__swatch legend__swatch--externa" aria-hidden />
                 Externa
               </span>
+              <span className="legend__item">
+                <span className="legend__swatch legend__swatch--blocked-lunch" aria-hidden />
+                Bloqueado (Espaço Multiuso 11h30–14h, dias úteis)
+              </span>
               <span className="legend__item">Slots de {SLOT_MINUTES} min</span>
               <span className="legend__item legend__item--hint">
                 Passe o rato ou clique num horário reservado para ver detalhes
               </span>
             </div>
             <div className="grid-wrap">
+              {!salasNomes.length && !catalogLoading ? (
+                <p className="hint" style={{ margin: '12px 0' }}>
+                  Não há salas para mostrar nesta unidade. Verifique o catálogo SharePoint ou a ligação à API.
+                </p>
+              ) : null}
               <table className="availability-grid">
                 <thead>
                   <tr>
@@ -451,7 +600,7 @@ export default function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {SALAS.map((sala) => (
+                  {salasNomes.map((sala) => (
                     <tr key={sala}>
                       <th className="room-head" scope="row">
                         {sala}
@@ -459,26 +608,32 @@ export default function App() {
                       {TIME_SLOTS.map((slot) => {
                         const res = getSlotReservation(sala, slot.startMin, slot.endMin)
                         const busy = res != null
+                        const blocked = !busy && isMultiusoSlotBlocked(sala, form.dataInicio, slot.startMin, slot.endMin)
                         const tipoSlot = busy ? reservationTipoReuniao(res) : null
-                        const slotClass = busy
-                          ? tipoSlot === 'externa'
-                            ? 'slot slot--busy-externa'
-                            : 'slot slot--busy-interna'
-                          : 'slot slot--free'
+                        let slotClass = 'slot slot--free'
+                        if (busy) {
+                          slotClass =
+                            tipoSlot === 'externa' ? 'slot slot--busy-externa' : 'slot slot--busy-interna'
+                        } else if (blocked) {
+                          slotClass = 'slot slot--blocked-lunch'
+                        }
                         const slotTitle = busy
                           ? reservationQuickSummaryLine(res, sala)
-                          : `${sala} · ${slot.label}–${minutesToTime(slot.endMin)} · Disponível`
+                          : blocked
+                            ? `${sala} · ${slot.label}–${minutesToTime(slot.endMin)} · Bloqueado (almoço, dias úteis)`
+                            : `${sala} · ${slot.label}–${minutesToTime(slot.endMin)} · Disponível`
+                        const aria = busy
+                          ? `${res.titulo || 'Reserva'}, ${res.horaInicio} a ${res.horaFim}, ocupado.`
+                          : blocked
+                            ? `${sala}, ${slot.label}, bloqueado para reserva (horário institucional).`
+                            : `${sala}, ${slot.label}, disponível`
                         return (
                           <td key={slot.startMin}>
                             <div
                               className={slotClass}
                               title={slotTitle}
                               role="img"
-                              aria-label={
-                                busy
-                                  ? `${res.titulo || 'Reserva'}, ${res.horaInicio} a ${res.horaFim}, ocupado. Passe o rato ou clique para ver detalhes.`
-                                  : `${sala}, ${slot.label}, disponível`
-                              }
+                              aria-label={aria}
                               onMouseEnter={busy ? (e) => handleBusySlotEnter(e, res) : undefined}
                               onMouseLeave={busy ? scheduleHoverHide : undefined}
                               onClick={busy ? (e) => handleBusySlotClick(e, res) : undefined}
@@ -517,7 +672,7 @@ export default function App() {
                         value={form.sala}
                         onChange={(e) => updateField('sala', e.target.value)}
                       >
-                        {SALAS.map((s) => (
+                        {salasNomes.map((s) => (
                           <option key={s} value={s}>
                             {s}
                           </option>
@@ -709,6 +864,7 @@ export default function App() {
             </section>
           </div>
         </div>
+      )}
 
       {slotHoverPreview ? (
         <div

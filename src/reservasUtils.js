@@ -189,6 +189,7 @@ export function migrateReservation(r) {
   return {
     ...r,
     tipoReuniao: reservationTipoReuniao(r),
+    unidade: r.unidade != null ? String(r.unidade).trim() : '',
     nomeCliente: r.nomeCliente != null ? String(r.nomeCliente).trim() : '',
     observacoes: r.observacoes != null ? String(r.observacoes) : '',
     createdByEmail,
@@ -350,4 +351,146 @@ export function findReservationConflictRange(
     if (c) return `${c} (em ${d})`
   }
   return null
+}
+
+/** Chave interna única para conflitos de horário do veículo (lista CarrosReserva_BMJ). */
+export const CARRO_CONFLICT_SALA_KEY = '__BMJ_CARRO_COROLLA__'
+
+export const CARRO_VEICULO_LABEL = 'Toyota Corolla'
+
+export const CARRO_MOTORISTA_LABEL = 'Charles Bueno'
+
+/** Horário permitido para reserva de carro (07h–20h), em minutos desde meia-noite. */
+export const CAR_DAY_START_MIN = 7 * 60
+export const CAR_DAY_END_MIN = 20 * 60
+
+export const APP_UNIDADE = {
+  BRASILIA: 'brasilia',
+  SAO_PAULO: 'sao-paulo',
+  CARRO: 'carro',
+}
+
+/** Opções do seletor no topo da app. */
+export const UNIDADES_APP = [
+  { id: APP_UNIDADE.BRASILIA, label: 'Brasília' },
+  { id: APP_UNIDADE.SAO_PAULO, label: 'São Paulo' },
+  { id: APP_UNIDADE.CARRO, label: 'Carro' },
+]
+
+/** Valor da coluna SharePoint `Unidade` conforme o id da app. */
+export function sharePointUnidadeFromAppId(appUnidadeId) {
+  if (appUnidadeId === APP_UNIDADE.BRASILIA) return 'Brasília'
+  if (appUnidadeId === APP_UNIDADE.SAO_PAULO) return 'São Paulo'
+  return ''
+}
+
+/** Nome exibido na lista para a sala «Espaço Multiuso» (Brasília). */
+export const SALA_ESPACO_MULTIUSO = 'Espaço Multiuso'
+
+export function isSalaEspaçoMultiuso(salaNome) {
+  const s = String(salaNome || '')
+    .trim()
+    .toLowerCase()
+  return s.includes('espaço multiuso') || s.includes('espaco multiuso')
+}
+
+export const MULTIUSO_BLOCK_START_MIN = 11 * 60 + 30
+export const MULTIUSO_BLOCK_END_MIN = 14 * 60
+
+export function isWeekendISO(dateISO) {
+  const d = new Date(`${dateISO}T12:00:00`)
+  const w = d.getDay()
+  return w === 0 || w === 6
+}
+
+/** Domingo de Páscoa (algoritmo de Meeus/Jones/Butcher), ano civil `year`. */
+export function easterSundayYMD(year) {
+  const a = year % 19
+  const b = Math.floor(year / 100)
+  const c = year % 100
+  const d = Math.floor(b / 4)
+  const e = b % 4
+  const f = Math.floor((b + 8) / 25)
+  const g = Math.floor((b - f + 1) / 3)
+  const h = (19 * a + b - d - g + 15) % 30
+  const i = Math.floor(c / 4)
+  const k = c % 4
+  const l = (32 + 2 * e + 2 * i - h - k) % 7
+  const m = Math.floor((a + 11 * h + 22 * l) / 451)
+  const month = Math.floor((h + l - 7 * m + 114) / 31)
+  const day = ((h + l - 7 * m + 114) % 31) + 1
+  return { month, day }
+}
+
+export function easterISO(year) {
+  const { month, day } = easterSundayYMD(year)
+  return `${year}-${pad2(month)}-${pad2(day)}`
+}
+
+function addDaysToISO(dateISO, deltaDays) {
+  const d = new Date(`${dateISO}T12:00:00`)
+  d.setDate(d.getDate() + deltaDays)
+  return toISODateLocal(d)
+}
+
+/** Feriados nacionais comuns (fixos + Carnaval terça, Sexta-feira Santa, Corpus Christi). */
+export function isBrasilFeriadoNacional(dateISO) {
+  const y = Number(dateISO.slice(0, 4))
+  if (!y) return false
+  const fixos = new Set([
+    `${y}-01-01`,
+    `${y}-04-21`,
+    `${y}-05-01`,
+    `${y}-09-07`,
+    `${y}-10-12`,
+    `${y}-11-02`,
+    `${y}-11-15`,
+    `${y}-12-25`,
+  ])
+  if (fixos.has(dateISO)) return true
+  const e = easterISO(y)
+  const moveis = new Set([
+    addDaysToISO(e, -47),
+    addDaysToISO(e, -2),
+    addDaysToISO(e, 60),
+  ])
+  return moveis.has(dateISO)
+}
+
+/** Slot [slotStartMin, slotEndMin) sobreposto ao bloqueio de almoço do Espaço Multiuso? */
+export function isMultiusoSlotBlocked(salaNome, dateISO, slotStartMin, slotEndMin) {
+  if (!isSalaEspaçoMultiuso(salaNome)) return false
+  if (isWeekendISO(dateISO) || isBrasilFeriadoNacional(dateISO)) return false
+  const b0 = MULTIUSO_BLOCK_START_MIN
+  const b1 = MULTIUSO_BLOCK_END_MIN
+  return slotStartMin < b1 && slotEndMin > b0
+}
+
+function intervalOverlapMin(a0, a1, b0, b1) {
+  return a0 < b1 && b0 < a1
+}
+
+/** Impede reserva em horário bloqueado (11h30–14h dias úteis sem feriado). */
+export function findMultiusoBloqueioRange(sala, startISO, endISO, startMin, endMin) {
+  if (!isSalaEspaçoMultiuso(sala)) return null
+  const b0 = MULTIUSO_BLOCK_START_MIN
+  const b1 = MULTIUSO_BLOCK_END_MIN
+  for (const d of eachDateISOInRange(startISO, endISO)) {
+    if (isWeekendISO(d) || isBrasilFeriadoNacional(d)) continue
+    if (intervalOverlapMin(startMin, endMin, b0, b1)) {
+      return `A sala «${SALA_ESPACO_MULTIUSO}» não pode ser reservada entre 11h30 e 14h00 em dias úteis (exceto feriados nacionais e fins de semana). Ajuste as datas ou horários (ex.: conflito em ${formatShortDateBR(d)}).`
+    }
+  }
+  return null
+}
+
+/** Reservas de salas visíveis na unidade: sala no catálogo e, se existir campo Unidade, deve coincidir. */
+export function filterReservasPorUnidade(reservations, catalogSalas, unidadeSpLabel) {
+  const set = new Set(catalogSalas)
+  return reservations.filter((r) => {
+    if (!set.has(r.sala)) return false
+    const u = String(r.unidade || '').trim()
+    if (!u) return true
+    return u === unidadeSpLabel
+  })
 }
