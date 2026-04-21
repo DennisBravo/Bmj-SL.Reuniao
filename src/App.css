@@ -157,7 +157,7 @@
 }
 
 .app__layout--carro {
-  max-width: 960px;
+  max-width: 1180px;
   margin: 0 auto;
 }
 
@@ -166,6 +166,54 @@
   flex-direction: column;
   gap: 20px;
   width: 100%;
+}
+
+.carro-view__occ-panel {
+  padding-bottom: 8px;
+}
+
+.carro-view__occ-hint {
+  margin: 0 0 14px;
+}
+
+.carro-view__occ-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 20px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .carro-view__occ-wrap {
+    grid-template-columns: 1fr;
+  }
+}
+
+.carro-view__occ-unit-title {
+  margin: 0 0 8px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+.carro-view__occ-grid-wrap {
+  padding-top: 10px;
+}
+
+/* Grade de carro: uma coluna fixa (veículo) + slots; sem coluna QTD */
+.availability-grid--carro {
+  --availability-sala-w: 132px;
+  min-width: 520px;
+}
+
+.availability-grid--carro .availability-grid__head-salas.room-head,
+.availability-grid--carro .availability-grid__sala-cell.room-head {
+  max-width: 148px;
+  width: var(--availability-sala-w);
+  white-space: normal;
+  line-height: 1.25;
+  hyphens: auto;
 }
 
 .carro-view__info {

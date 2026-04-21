@@ -5,9 +5,9 @@ import {
   SLOT_MINUTES,
   DAY_START_MIN,
   DAY_END_MIN,
-  DAY_GRID_START_MIN,
   timeToMinutes,
   minutesToTime,
+  buildGridTimeSlots,
   isValidEmail,
   todayISO,
   reservationCoversDate,
@@ -37,15 +37,7 @@ import { getCurrentUserEmail, normalizeEmail } from './envConfig.js'
 import { notifyTeamsNewReservationWithNotes } from './teamsWebhook.js'
 import './App.css'
 
-function buildTimeSlots() {
-  const slots = []
-  for (let m = DAY_GRID_START_MIN; m < DAY_END_MIN; m += SLOT_MINUTES) {
-    slots.push({ startMin: m, endMin: m + SLOT_MINUTES, label: minutesToTime(m) })
-  }
-  return slots
-}
-
-const TIME_SLOTS = buildTimeSlots()
+const TIME_SLOTS = buildGridTimeSlots()
 
 const SALAS_CATALOGO_API =
   import.meta.env.VITE_SALAS_CATALOGO_API_URL || import.meta.env.VITE_SALAS_CATALOG_API_URL || '/api/salas-catalogo'
@@ -582,12 +574,6 @@ export default function App() {
                 Bloqueado (Espaço Multiuso 11h30–14h, dias úteis)
               </span>
               <span className="legend__item">Slots de {SLOT_MINUTES} min</span>
-              <span className="legend__item legend__item--hint">
-                «QTD Pessoas»: capacidade máxima da sala (dados BMJ; ex.: 04, 10, 50-100).
-              </span>
-              <span className="legend__item legend__item--hint">
-                Passe o rato ou clique num horário reservado para ver detalhes
-              </span>
             </div>
             <div className="grid-wrap">
               {!salasNomes.length && !catalogLoading ? (

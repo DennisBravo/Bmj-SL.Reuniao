@@ -90,6 +90,7 @@ function graphListItemToCarReservation(item) {
     deletedAt: soft || null,
     deletedByEmail: f.DeletadoPorEmail || null,
     createdByEmail: email,
+    unidade: f.Unidade != null ? String(f.Unidade).trim() : '',
   }
 }
 

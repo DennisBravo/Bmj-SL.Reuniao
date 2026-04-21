@@ -25,6 +25,15 @@ export const DAY_END_MIN = 20 * 60
 /** Início da **grade** de disponibilidade (primeiro slot = 08:00). Reservas continuam limitadas por `DAY_START_MIN`. */
 export const DAY_GRID_START_MIN = 8 * 60
 
+/** Slots da grade de disponibilidade (08:00 … `DAY_END_MIN`). */
+export function buildGridTimeSlots() {
+  const slots = []
+  for (let m = DAY_GRID_START_MIN; m < DAY_END_MIN; m += SLOT_MINUTES) {
+    slots.push({ startMin: m, endMin: m + SLOT_MINUTES, label: minutesToTime(m) })
+  }
+  return slots
+}
+
 export function pad2(n) {
   return String(n).padStart(2, '0')
 }
@@ -150,11 +159,19 @@ export function splitParticipantesEmails(raw) {
 
 /**
  * Nome na grade / selects: remove o prefixo «Sala » no início (ex.: «Sala Reunião 01» → «Reunião 01»).
+ * «Espaço Multiuso» abreviado para caber na coluna sem cortar só a «M».
  */
 export function salaNomeGradeExibicao(salaNome) {
-  return String(salaNome || '')
+  const s = String(salaNome || '')
     .replace(/^\s*Sala\s+/i, '')
-    .trim() || '—'
+    .trim()
+  if (!s) return '—'
+  const n = s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+  if (n.includes('multiuso') && n.includes('espaco')) return 'Espaço Mult.'
+  return s
 }
 
 /** @deprecated Use `salaNomeGradeExibicao`. */
@@ -288,6 +305,14 @@ export function reservationQuickSummaryLine(r, sala) {
   const sol = (r.solicitante || '').trim().slice(0, 40)
   const tail = sol ? ` · ${sol}` : ''
   return `${tipo} · ${tit} · ${r.horaInicio}–${r.horaFim} · ${sala}${tail} — Clique para detalhes`
+}
+
+/** Resumo curto para tooltip na grade de carro. */
+export function carReservationSlotSummary(r) {
+  const d = (r.destino || r.titulo || 'Carro').trim().slice(0, 52)
+  const sol = (r.solicitante || '').trim().slice(0, 38)
+  const tail = sol ? ` · ${sol}` : ''
+  return `${d} · ${r.horaInicio}–${r.horaFim}${tail}`
 }
 
 /** Lista de ISO dates de start a end inclusive (ordem crescente). */
@@ -436,7 +461,7 @@ function normCapKey(s) {
 }
 
 const CAP_QTD_BRASILIA_RAW = Object.freeze({
-  'Espaço Multiuso': '50-100',
+  'Espaço Multiuso': '100',
   'Reunião 01': '04',
   'Reunião 02': '04',
   'Reunião 03': '06',
@@ -475,6 +500,18 @@ function buildCapLookup(raw) {
 
 const CAP_LOOKUP_BRASILIA = buildCapLookup(CAP_QTD_BRASILIA_RAW)
 const CAP_LOOKUP_SAO_PAULO = buildCapLookup(CAP_QTD_SAO_PAULO_RAW)
+
+/** Reservas de carro ativas num dia e unidade (SharePoint `Unidade`). Sem unidade: assume Brasília. */
+export function filterCarReservationsForUnitOnDate(carList, dateISO, unidadeLabel) {
+  const target = normCapKey(unidadeLabel)
+  return (carList || []).filter((r) => {
+    if (!r || r.deletedAt) return false
+    if (!reservationCoversDate(r, dateISO)) return false
+    const u = normCapKey(String(r.unidade || '').trim())
+    if (!u) return target === normCapKey('Brasília')
+    return u === target
+  })
+}
 
 /** Capacidade «QTD Pessoas» estática por unidade (dados operação BMJ). */
 export function capacidadeQtdPessoasExibicao(salaNome, appUnidadeId) {
