@@ -984,14 +984,14 @@
   white-space: nowrap;
 }
 
-/* Só participantes: deslocar «Gerir participantes» 0,6 cm para baixo. */
+/* Só participantes: deslocar «Gerir participantes» 1 cm para baixo. */
 .form__tipo-participantes-cell--part .form__panel-head .form__panel-edit-btn {
-  transform: translateY(0.6cm);
+  transform: translateY(1cm);
 }
 
-/* Só tipo (Externa): deslocar «Gerir clientes» 0,5 cm para baixo. */
+/* Só tipo (Externa): deslocar «Gerir clientes» 1 cm para baixo. */
 .form__tipo-participantes-cell--tipo .form__tipo-fieldset--compact > .form__panel-edit-btn {
-  transform: translateY(0.5cm);
+  transform: translateY(1cm);
 }
 
 .form__panel--error {
