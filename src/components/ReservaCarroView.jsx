@@ -342,7 +342,7 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
               </div>
             </div>
             <div className="form__actions">
-              <button type="submit" className="btn-primary" disabled={carLoading}>
+              <button type="submit" className="btn" disabled={carLoading}>
                 {carLoading ? 'A guardar…' : 'Reservar carro'}
               </button>
             </div>
