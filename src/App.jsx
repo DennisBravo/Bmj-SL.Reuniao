@@ -557,7 +557,7 @@ export default function App() {
       </header>
 
       {isCarro ? (
-        <div className="app__layout app__layout--carro">
+        <div className="app__layout">
           <ReservaCarroView
             carReservations={carReservations}
             addCarReservation={addCarReservation}

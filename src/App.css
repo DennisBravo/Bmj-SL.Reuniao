@@ -156,37 +156,18 @@
   color: #1a1a1a;
 }
 
-.app__layout--carro {
-  max-width: 920px;
-  margin: 0 auto;
-  width: 100%;
-  box-sizing: border-box;
-  padding-left: 12px;
-  padding-right: 12px;
-}
-
+/* Vista de carro: mesmo padrão de coluna que `.app__layout` (salas Brasília / SP) — sem max-width extra */
 .carro-view {
   width: 100%;
 }
 
+/* Empilha info + ocupação + formulário com o mesmo gap que o layout principal */
 .carro-view__shell {
-  width: 100%;
-  max-width: 880px;
-  margin-left: auto;
-  margin-right: auto;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  box-sizing: border-box;
-}
-
-.carro-view__shell .carro-view__info,
-.carro-view__shell .carro-view__occ-panel,
-.carro-view__shell .carro-view__form-panel {
+  gap: 28px;
+  align-items: stretch;
   width: 100%;
-  max-width: 100%;
-  margin-left: 0;
-  margin-right: 0;
   box-sizing: border-box;
 }
 
@@ -213,7 +194,6 @@
   padding-top: 18px !important;
   padding-bottom: 2px !important;
   margin-bottom: 2px !important;
-  text-align: center;
 }
 
 .carro-view__occ-hint {
@@ -222,40 +202,32 @@
   font-size: 0.75rem;
   line-height: 1.45;
   color: var(--text-muted);
-  text-align: center;
 }
 
 .carro-view__occ-wrap {
-  display: flex;
-  justify-content: center;
   width: 100%;
-  padding: 0 0 18px;
   box-sizing: border-box;
 }
 
 .carro-view__occ-unit {
   width: 100%;
-  max-width: 100%;
-  display: flex;
-  justify-content: center;
 }
 
+/* Mesmo comportamento de `.grid-wrap` da grade de salas: largura total, scroll horizontal na tabela */
 .carro-view__occ-grid-wrap {
-  margin: 0 auto;
-  padding: 14px 16px 18px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
   box-sizing: border-box;
 }
 
-.carro-view__occ-panel .grid-wrap.carro-view__occ-grid-wrap {
-  width: fit-content;
-  max-width: 100%;
-}
-
-/* Grade do carro: espaçador invisível + Corolla + slots (sem 19:00 / 19:30) */
+/* Grade do carro: espaçador invisível + Corolla + slots (sem 19:00 / 19:30); min-width alinhado à grade de salas */
 .availability-grid--carro {
   --availability-sala-w: 76px;
   --availability-head-primary-h: 2rem;
-  min-width: 0;
+  min-width: 740px;
+  width: 100%;
 }
 
 .availability-grid--carro .availability-grid__head-carro-spacer {
@@ -338,15 +310,11 @@
 
 .carro-view__form-panel {
   width: 100%;
-  max-width: 100%;
-  margin-left: 0;
-  margin-right: 0;
   box-sizing: border-box;
 }
 
 .carro-view__form-title {
   font-size: 1rem !important;
-  text-align: center;
   padding-top: 18px !important;
   padding-bottom: 4px !important;
   margin-bottom: 0 !important;
@@ -365,7 +333,6 @@
 }
 
 .carro-view__form-panel .form__actions {
-  justify-content: center;
   margin-top: 12px;
 }
 
