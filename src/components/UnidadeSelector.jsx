@@ -2,13 +2,15 @@ import { UNIDADES_APP } from '../reservasUtils'
 
 /**
  * Seletor destacado: Brasília | São Paulo | Carro.
+ * `options`: lista alternativa (ex.: ocultar «Carro» quando só São Paulo tem veículo indisponível).
  */
-export default function UnidadeSelector({ value, onChange, disabled }) {
+export default function UnidadeSelector({ value, onChange, disabled, options }) {
+  const list = Array.isArray(options) && options.length > 0 ? options : UNIDADES_APP
   return (
     <div className="unidade-selector" role="group" aria-label="Unidade ou serviço">
       <span className="unidade-selector__label">Unidade</span>
       <div className="unidade-selector__options">
-        {UNIDADES_APP.map((u) => (
+        {list.map((u) => (
           <button
             key={u.id}
             type="button"

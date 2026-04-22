@@ -509,16 +509,22 @@ function buildCapLookup(raw) {
 const CAP_LOOKUP_BRASILIA = buildCapLookup(CAP_QTD_BRASILIA_RAW)
 const CAP_LOOKUP_SAO_PAULO = buildCapLookup(CAP_QTD_SAO_PAULO_RAW)
 
-/** Reservas de carro ativas num dia e unidade (SharePoint `Unidade`). Sem unidade: assume Brasília. */
-export function filterCarReservationsForUnitOnDate(carList, dateISO, unidadeLabel) {
+/** Reservas de carro ativas filtradas pela coluna SharePoint `Unidade`. Sem unidade: assume Brasília. */
+export function filterCarReservationsByUnidade(carList, unidadeLabel) {
   const target = normCapKey(unidadeLabel)
   return (carList || []).filter((r) => {
     if (!r || r.deletedAt) return false
-    if (!reservationCoversDate(r, dateISO)) return false
     const u = normCapKey(String(r.unidade || '').trim())
     if (!u) return target === normCapKey('Brasília')
     return u === target
   })
+}
+
+/** Reservas de carro ativas num dia e unidade (SharePoint `Unidade`). */
+export function filterCarReservationsForUnitOnDate(carList, dateISO, unidadeLabel) {
+  return filterCarReservationsByUnidade(carList, unidadeLabel).filter((r) =>
+    reservationCoversDate(r, dateISO),
+  )
 }
 
 /** Capacidade «QTD Pessoas» estática por unidade (dados operação BMJ). */

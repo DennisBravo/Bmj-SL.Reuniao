@@ -19,6 +19,7 @@ import {
   participantesResumoLabel,
   clientesResumoLabel,
   APP_UNIDADE,
+  UNIDADES_APP,
   sharePointUnidadeFromAppId,
   filterReservasPorUnidade,
   isMultiusoSlotBlocked,
@@ -467,6 +468,14 @@ export default function App() {
   const isCarro = appUnidade === APP_UNIDADE.CARRO
   const pageTitle = isCarro ? 'Reserva de carro' : 'Reserva de salas'
 
+  /** O veículo existe só em Brasília: em São Paulo não mostrar a opção «Carro». */
+  const unidadesParaSelector = useMemo(() => {
+    if (appUnidade === APP_UNIDADE.SAO_PAULO) {
+      return UNIDADES_APP.filter((u) => u.id !== APP_UNIDADE.CARRO)
+    }
+    return UNIDADES_APP
+  }, [appUnidade])
+
   return (
     <div className="app">
       <header className="app__header">
@@ -538,7 +547,12 @@ export default function App() {
           ) : null}
         </div>
         <div className="app__header-unidade">
-          <UnidadeSelector value={appUnidade} onChange={setAppUnidade} disabled={false} />
+          <UnidadeSelector
+            value={appUnidade}
+            onChange={setAppUnidade}
+            disabled={false}
+            options={unidadesParaSelector}
+          />
         </div>
       </header>
 

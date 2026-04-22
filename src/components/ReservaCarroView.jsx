@@ -14,6 +14,7 @@ import {
   CAR_DAY_END_MIN,
   SLOT_MINUTES,
   buildCarGridTimeSlots,
+  filterCarReservationsByUnidade,
   filterCarReservationsForUnitOnDate,
   carReservationSlotSummary,
 } from '../reservasUtils'
@@ -24,7 +25,6 @@ const defaultForm = () => ({
   date: todayISO(),
   horaInicio: '09:00',
   horaFim: '10:00',
-  unidade: 'Brasília',
   destino: '',
   motivo: '',
   solicitante: '',
@@ -34,22 +34,18 @@ const defaultForm = () => ({
 
 const CAR_GRID_SLOTS = buildCarGridTimeSlots()
 
-const CARRO_UNIDADES_GRADE = [
-  { id: 'brasilia', titulo: 'Brasília', unidadeFiltro: 'Brasília' },
-  { id: 'sao-paulo', titulo: 'São Paulo', unidadeFiltro: 'São Paulo' },
-]
-
 export default function ReservaCarroView({ carReservations, addCarReservation, carLoading, carError, clearCarError }) {
   const [form, setForm] = useState(defaultForm)
   const [formError, setFormError] = useState('')
   const [saveSuccess, setSaveSuccess] = useState(false)
 
-  const carrosBsb = useMemo(
-    () => filterCarReservationsForUnitOnDate(carReservations, form.date, 'Brasília'),
-    [carReservations, form.date],
+  const carReservasBrasilia = useMemo(
+    () => filterCarReservationsByUnidade(carReservations, 'Brasília'),
+    [carReservations],
   )
-  const carrosSp = useMemo(
-    () => filterCarReservationsForUnitOnDate(carReservations, form.date, 'São Paulo'),
+
+  const carrosBsbDia = useMemo(
+    () => filterCarReservationsForUnitOnDate(carReservations, form.date, 'Brasília'),
     [carReservations, form.date],
   )
 
@@ -113,7 +109,7 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
       date,
       startMin,
       endMin,
-      carReservations,
+      carReservasBrasilia,
       null,
     )
     if (conflict) {
@@ -139,7 +135,7 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
       observacoes,
       veiculo: CARRO_VEICULO_LABEL,
       motorista: CARRO_MOTORISTA_LABEL,
-      unidade: String(form.unidade || 'Brasília').trim() || 'Brasília',
+      unidade: 'Brasília',
       criadoEm: now,
       createdAt: now,
       updatedAt: now,
@@ -159,210 +155,200 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
 
   return (
     <div className="carro-view">
-      <section className="panel carro-view__info">
-        <h2 className="carro-view__vehicle-heading">
-          Veículo disponível: <span className="carro-view__vehicle-name">{CARRO_VEICULO_LABEL}</span>
-        </h2>
-        <p className="carro-view__driver">
-          Motorista: <strong>{CARRO_MOTORISTA_LABEL}</strong>
-        </p>
-      </section>
-
-      <section className="panel panel--grid carro-view__occ-panel">
-        <h2 className="panel__title carro-view__occ-section-title">Ocupação do veículo por unidade</h2>
-        <p className="carro-view__occ-hint">A grade segue a data escolhida no formulário.</p>
-        <div className="carro-view__occ-wrap">
-          {CARRO_UNIDADES_GRADE.map((u) => {
-            const list = u.id === 'brasilia' ? carrosBsb : carrosSp
-            return (
-              <div key={u.id} className="carro-view__occ-unit">
-                <h3 className="carro-view__occ-unit-title">{u.titulo}</h3>
-                <div className="grid-wrap carro-view__occ-grid-wrap">
-                  <table
-                    className="availability-grid availability-grid--carro"
-                    aria-label={`Ocupação do veículo — ${u.titulo}`}
-                  >
-                    <thead>
-                      <tr className="availability-grid__head-row-primary">
-                        <th className="availability-grid__head-carro-spacer" rowSpan={2} scope="col" aria-hidden="true" />
-                        <th
-                          className="availability-grid__head-horarios availability-grid__head-title availability-grid__head-title--carro-horarios"
-                          colSpan={CAR_GRID_SLOTS.length}
-                          scope="colgroup"
-                        >
-                          Horários
-                        </th>
-                      </tr>
-                      <tr className="availability-grid__head-row-slots">
-                        {CAR_GRID_SLOTS.map((s) => (
-                          <th key={s.startMin} scope="col" className="availability-grid__th-slot">
-                            {s.label}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <th
-                          className="room-head availability-grid__sala-cell availability-grid__sala-cell--carro"
-                          scope="row"
-                          title={CARRO_VEICULO_LABEL}
-                        >
-                          {CARRO_VEICULO_GRADE_LABEL}
-                        </th>
-                        {CAR_GRID_SLOTS.map((slot) => {
-                          const res = findReservationForSlot(list, CARRO_CONFLICT_SALA_KEY, slot.startMin, slot.endMin)
-                          const busy = res != null
-                          const slotClass = busy ? 'slot slot--busy-interna' : 'slot slot--free'
-                          const slotTitle = busy
-                            ? carReservationSlotSummary(res)
-                            : `${CARRO_VEICULO_GRADE_LABEL} · ${slot.label}–${minutesToTime(slot.endMin)} · Disponível`
-                          const aria = busy
-                            ? `${res.titulo || 'Reserva'}, ${res.horaInicio} a ${res.horaFim}, ocupado.`
-                            : `${CARRO_VEICULO_GRADE_LABEL}, ${slot.label}, disponível`
-                          return (
-                            <td key={slot.startMin}>
-                              <div className={slotClass} title={slotTitle} role="img" aria-label={aria} />
-                            </td>
-                          )
-                        })}
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </section>
-
-      <section className="panel form-panel carro-view__form-panel">
-        <h2 className="panel__title carro-view__form-title">Nova reserva de carro</h2>
-        {saveSuccess ? (
-          <p className="form__success" role="status">
-            Reserva de carro registada com sucesso.
+      <div className="carro-view__shell">
+        <section className="panel carro-view__info">
+          <h2 className="carro-view__vehicle-heading">
+            Veículo disponível: <span className="carro-view__vehicle-name">{CARRO_VEICULO_LABEL}</span>
+          </h2>
+          <p className="carro-view__driver">
+            Motorista: <strong>{CARRO_MOTORISTA_LABEL}</strong>
           </p>
-        ) : null}
-        {formError ? <p className="form__error">{formError}</p> : null}
-        {carError ? (
-          <div className="form__error" role="alert">
-            {carError}{' '}
-            <button type="button" className="btn-ghost" onClick={clearCarError}>
-              Fechar
-            </button>
-          </div>
-        ) : null}
+        </section>
 
-        <form className="form carro-view__form" onSubmit={handleSubmit}>
-          <div className="form__grid-2col carro-view__form-grid">
-            <div className="form__col">
-              <div className="form__row">
-                <label htmlFor="car-data">Data</label>
-                <input
-                  id="car-data"
-                  type="date"
-                  value={form.date}
-                  onChange={(e) => updateField('date', e.target.value)}
-                  required
-                />
-              </div>
-              <div className="form__row">
-                <label htmlFor="car-unidade">Unidade</label>
-                <select
-                  id="car-unidade"
-                  value={form.unidade}
-                  onChange={(e) => updateField('unidade', e.target.value)}
+        <section className="panel panel--grid carro-view__occ-panel">
+          <h2 className="panel__title carro-view__occ-section-title">Ocupação do veículo</h2>
+          <p className="carro-view__occ-hint">A grade segue a data escolhida no formulário (Brasília).</p>
+          <div className="carro-view__occ-wrap">
+            <div className="carro-view__occ-unit">
+              <div className="grid-wrap carro-view__occ-grid-wrap">
+                <table
+                  className="availability-grid availability-grid--carro"
+                  aria-label="Ocupação do veículo — Brasília"
                 >
-                  <option value="Brasília">Brasília</option>
-                  <option value="São Paulo">São Paulo</option>
-                </select>
-              </div>
-              <div className="form__row form__row--2">
-                <div className="form__row">
-                  <label htmlFor="car-ini">Hora início</label>
-                  <input
-                    id="car-ini"
-                    type="time"
-                    step={SLOT_MINUTES * 60}
-                    value={form.horaInicio}
-                    onChange={(e) => updateField('horaInicio', e.target.value)}
-                  />
-                </div>
-                <div className="form__row">
-                  <label htmlFor="car-fim">Hora fim</label>
-                  <input
-                    id="car-fim"
-                    type="time"
-                    step={SLOT_MINUTES * 60}
-                    value={form.horaFim}
-                    onChange={(e) => updateField('horaFim', e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="form__row">
-                <label htmlFor="car-destino">Destino</label>
-                <input
-                  id="car-destino"
-                  type="text"
-                  autoComplete="off"
-                  value={form.destino}
-                  onChange={(e) => updateField('destino', e.target.value)}
-                  placeholder="Ex.: Ministério da Saúde"
-                />
-              </div>
-              <div className="form__row">
-                <label htmlFor="car-motivo">Motivo</label>
-                <input
-                  id="car-motivo"
-                  type="text"
-                  autoComplete="off"
-                  value={form.motivo}
-                  onChange={(e) => updateField('motivo', e.target.value)}
-                  placeholder="Ex.: Reunião externa"
-                />
-              </div>
-            </div>
-            <div className="form__col">
-              <div className="form__row">
-                <label htmlFor="car-solicitante">Nome do solicitante</label>
-                <input
-                  id="car-solicitante"
-                  type="text"
-                  autoComplete="name"
-                  value={form.solicitante}
-                  onChange={(e) => updateField('solicitante', e.target.value)}
-                />
-              </div>
-              <div className="form__row">
-                <label htmlFor="car-email">E-mail do solicitante</label>
-                <M365EmailAutocomplete
-                  id="car-email"
-                  required
-                  placeholder="nome@bmj.com.br"
-                  value={form.emailSolicitante}
-                  onValueChange={(v) => updateField('emailSolicitante', v)}
-                />
-              </div>
-              <div className="form__row">
-                <label htmlFor="car-obs">Observações</label>
-                <textarea
-                  id="car-obs"
-                  className="form__textarea form__textarea--observacoes"
-                  rows={4}
-                  value={form.observacoes}
-                  onChange={(e) => updateField('observacoes', e.target.value)}
-                  placeholder="Detalhes adicionais (opcional)"
-                />
+                  <thead>
+                    <tr className="availability-grid__head-row-primary">
+                      <th className="availability-grid__head-carro-spacer" rowSpan={2} scope="col" aria-hidden="true" />
+                      <th
+                        className="availability-grid__head-horarios availability-grid__head-title availability-grid__head-title--carro-horarios"
+                        colSpan={CAR_GRID_SLOTS.length}
+                        scope="colgroup"
+                      >
+                        Horários
+                      </th>
+                    </tr>
+                    <tr className="availability-grid__head-row-slots">
+                      {CAR_GRID_SLOTS.map((s) => (
+                        <th key={s.startMin} scope="col" className="availability-grid__th-slot">
+                          {s.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th
+                        className="room-head availability-grid__sala-cell availability-grid__sala-cell--carro"
+                        scope="row"
+                        title={CARRO_VEICULO_LABEL}
+                      >
+                        {CARRO_VEICULO_GRADE_LABEL}
+                      </th>
+                      {CAR_GRID_SLOTS.map((slot) => {
+                        const res = findReservationForSlot(
+                          carrosBsbDia,
+                          CARRO_CONFLICT_SALA_KEY,
+                          slot.startMin,
+                          slot.endMin,
+                        )
+                        const busy = res != null
+                        const slotClass = busy ? 'slot slot--busy-interna' : 'slot slot--free'
+                        const slotTitle = busy
+                          ? carReservationSlotSummary(res)
+                          : `${CARRO_VEICULO_GRADE_LABEL} · ${slot.label}–${minutesToTime(slot.endMin)} · Disponível`
+                        const aria = busy
+                          ? `${res.titulo || 'Reserva'}, ${res.horaInicio} a ${res.horaFim}, ocupado.`
+                          : `${CARRO_VEICULO_GRADE_LABEL}, ${slot.label}, disponível`
+                        return (
+                          <td key={slot.startMin}>
+                            <div className={slotClass} title={slotTitle} role="img" aria-label={aria} />
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
-          <div className="form__actions">
-            <button type="submit" className="btn-primary" disabled={carLoading}>
-              {carLoading ? 'A guardar…' : 'Reservar carro'}
-            </button>
-          </div>
-        </form>
-      </section>
+        </section>
+
+        <section className="panel form-panel carro-view__form-panel">
+          <h2 className="panel__title carro-view__form-title">Nova reserva de carro</h2>
+          {saveSuccess ? (
+            <p className="form__success" role="status">
+              Reserva de carro registada com sucesso.
+            </p>
+          ) : null}
+          {formError ? <p className="form__error">{formError}</p> : null}
+          {carError ? (
+            <div className="form__error" role="alert">
+              {carError}{' '}
+              <button type="button" className="btn-ghost" onClick={clearCarError}>
+                Fechar
+              </button>
+            </div>
+          ) : null}
+
+          <form className="form carro-view__form" onSubmit={handleSubmit}>
+            <div className="form__grid-2col carro-view__form-grid">
+              <div className="form__col">
+                <div className="form__row">
+                  <label htmlFor="car-data">Data</label>
+                  <input
+                    id="car-data"
+                    type="date"
+                    value={form.date}
+                    onChange={(e) => updateField('date', e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form__row form__row--2">
+                  <div className="form__row">
+                    <label htmlFor="car-ini">Hora início</label>
+                    <input
+                      id="car-ini"
+                      type="time"
+                      step={SLOT_MINUTES * 60}
+                      value={form.horaInicio}
+                      onChange={(e) => updateField('horaInicio', e.target.value)}
+                    />
+                  </div>
+                  <div className="form__row">
+                    <label htmlFor="car-fim">Hora fim</label>
+                    <input
+                      id="car-fim"
+                      type="time"
+                      step={SLOT_MINUTES * 60}
+                      value={form.horaFim}
+                      onChange={(e) => updateField('horaFim', e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="form__row">
+                  <label htmlFor="car-destino">Destino</label>
+                  <input
+                    id="car-destino"
+                    type="text"
+                    autoComplete="off"
+                    value={form.destino}
+                    onChange={(e) => updateField('destino', e.target.value)}
+                    placeholder="Ex.: Ministério da Saúde"
+                  />
+                </div>
+                <div className="form__row">
+                  <label htmlFor="car-motivo">Motivo</label>
+                  <input
+                    id="car-motivo"
+                    type="text"
+                    autoComplete="off"
+                    value={form.motivo}
+                    onChange={(e) => updateField('motivo', e.target.value)}
+                    placeholder="Ex.: Reunião externa"
+                  />
+                </div>
+              </div>
+              <div className="form__col">
+                <div className="form__row">
+                  <label htmlFor="car-solicitante">Nome do solicitante</label>
+                  <input
+                    id="car-solicitante"
+                    type="text"
+                    autoComplete="name"
+                    value={form.solicitante}
+                    onChange={(e) => updateField('solicitante', e.target.value)}
+                  />
+                </div>
+                <div className="form__row">
+                  <label htmlFor="car-email">E-mail do solicitante</label>
+                  <M365EmailAutocomplete
+                    id="car-email"
+                    required
+                    placeholder="nome@bmj.com.br"
+                    value={form.emailSolicitante}
+                    onValueChange={(v) => updateField('emailSolicitante', v)}
+                  />
+                </div>
+                <div className="form__row">
+                  <label htmlFor="car-obs">Observações</label>
+                  <textarea
+                    id="car-obs"
+                    className="form__textarea form__textarea--observacoes"
+                    rows={4}
+                    value={form.observacoes}
+                    onChange={(e) => updateField('observacoes', e.target.value)}
+                    placeholder="Detalhes adicionais (opcional)"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="form__actions">
+              <button type="submit" className="btn-primary" disabled={carLoading}>
+                {carLoading ? 'A guardar…' : 'Reservar carro'}
+              </button>
+            </div>
+          </form>
+        </section>
+      </div>
     </div>
   )
 }
