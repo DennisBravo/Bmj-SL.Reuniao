@@ -34,9 +34,9 @@ export function buildGridTimeSlots() {
   return slots
 }
 
-/** Grade do carro: igual a `buildGridTimeSlots`, sem a coluna 19:00. */
+/** Grade do carro: `buildGridTimeSlots` sem as colunas 19:00 e 19:30. */
 export function buildCarGridTimeSlots() {
-  return buildGridTimeSlots().filter((s) => s.startMin !== 19 * 60)
+  return buildGridTimeSlots().filter((s) => s.startMin !== 19 * 60 && s.startMin !== 19 * 60 + 30)
 }
 
 export function pad2(n) {
@@ -429,6 +429,9 @@ export function findReservationConflictRange(
 export const CARRO_CONFLICT_SALA_KEY = '__BMJ_CARRO_COROLLA__'
 
 export const CARRO_VEICULO_LABEL = 'Toyota Corolla'
+
+/** Rótulo curto na grade de ocupação do carro (coluna estreita). */
+export const CARRO_VEICULO_GRADE_LABEL = 'Corolla'
 
 export const CARRO_MOTORISTA_LABEL = 'Charles Bueno'
 

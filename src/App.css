@@ -191,47 +191,58 @@
   padding-top: 18px !important;
   padding-bottom: 2px !important;
   margin-bottom: 2px !important;
+  text-align: center;
 }
 
 .carro-view__occ-hint {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
   padding: 0 24px;
   font-size: 0.75rem;
   line-height: 1.45;
   color: var(--text-muted);
+  text-align: center;
 }
 
 .carro-view__occ-wrap {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px 20px;
-  align-items: start;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 18px 24px;
+  width: 100%;
+  padding: 0 16px 18px;
+  box-sizing: border-box;
 }
 
 @media (max-width: 900px) {
   .carro-view__occ-wrap {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: center;
   }
 }
 
-.carro-view__occ-unit-title {
-  margin: 0 0 6px;
-  padding: 0 4px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  color: var(--text);
+.carro-view__occ-unit {
+  flex: 0 1 auto;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .carro-view__occ-grid-wrap {
-  padding-top: 6px;
+  margin: 0 auto;
+  padding: 14px 16px 18px;
+  box-sizing: border-box;
 }
 
-/* Grade do carro: espaçador invisível (alinhamento) + modelo + slots; sem coluna 19:00 */
+.carro-view__occ-panel .grid-wrap.carro-view__occ-grid-wrap {
+  width: fit-content;
+  max-width: 100%;
+}
+
+/* Grade do carro: espaçador invisível + Corolla + slots (sem 19:00 / 19:30) */
 .availability-grid--carro {
-  --availability-sala-w: 118px;
+  --availability-sala-w: 76px;
   --availability-head-primary-h: 2rem;
-  min-width: 440px;
+  min-width: 0;
 }
 
 .availability-grid--carro .availability-grid__head-carro-spacer {
@@ -277,17 +288,24 @@
   vertical-align: middle;
 }
 
+.availability-grid--carro tbody td {
+  vertical-align: middle;
+  padding: 0;
+}
+
 .availability-grid--carro .availability-grid__sala-cell--carro.room-head {
   width: var(--availability-sala-w);
   min-width: var(--availability-sala-w);
   max-width: var(--availability-sala-w);
-  padding: 6px 8px;
+  padding: 0 8px;
+  height: 34px;
+  line-height: 34px;
+  box-sizing: border-box;
   font-size: 0.75rem;
   font-weight: 600;
-  line-height: 1.25;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  text-overflow: clip;
   hyphens: none;
   word-break: normal;
   text-align: left;
@@ -299,21 +317,43 @@
 }
 
 .carro-view__driver {
-  margin: 0 0 8px;
+  margin: 0;
   font-size: 0.8125rem;
   line-height: 1.4;
   color: var(--text-muted);
 }
 
-.carro-view__hint {
-  margin: 0;
-  font-size: 0.75rem;
-  line-height: 1.45;
-  color: var(--text-muted);
-}
-
 .carro-view__form-panel {
   width: 100%;
+  max-width: 840px;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+
+.carro-view__form-title {
+  font-size: 1rem !important;
+  text-align: center;
+  padding-top: 18px !important;
+  padding-bottom: 4px !important;
+  margin-bottom: 0 !important;
+}
+
+.carro-view__form {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding-bottom: 8px;
+}
+
+.carro-view__form-grid {
+  gap: 20px 28px;
+  align-items: start;
+}
+
+.carro-view__form-panel .form__actions {
+  justify-content: center;
+  margin-top: 12px;
 }
 
 .app__user-chip {

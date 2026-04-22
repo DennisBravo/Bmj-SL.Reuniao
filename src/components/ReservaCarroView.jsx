@@ -8,6 +8,7 @@ import {
   findReservationForSlot,
   CARRO_CONFLICT_SALA_KEY,
   CARRO_VEICULO_LABEL,
+  CARRO_VEICULO_GRADE_LABEL,
   CARRO_MOTORISTA_LABEL,
   CAR_DAY_START_MIN,
   CAR_DAY_END_MIN,
@@ -165,10 +166,6 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
         <p className="carro-view__driver">
           Motorista: <strong>{CARRO_MOTORISTA_LABEL}</strong>
         </p>
-        <p className="carro-view__hint">
-          Horário permitido: {minutesToTime(CAR_DAY_START_MIN)} às {minutesToTime(CAR_DAY_END_MIN)}. Slots de{' '}
-          {SLOT_MINUTES} min. Não é permitido sobrepor reservas no mesmo horário.
-        </p>
       </section>
 
       <section className="panel panel--grid carro-view__occ-panel">
@@ -211,7 +208,7 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
                           scope="row"
                           title={CARRO_VEICULO_LABEL}
                         >
-                          {CARRO_VEICULO_LABEL}
+                          {CARRO_VEICULO_GRADE_LABEL}
                         </th>
                         {CAR_GRID_SLOTS.map((slot) => {
                           const res = findReservationForSlot(list, CARRO_CONFLICT_SALA_KEY, slot.startMin, slot.endMin)
@@ -219,10 +216,10 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
                           const slotClass = busy ? 'slot slot--busy-interna' : 'slot slot--free'
                           const slotTitle = busy
                             ? carReservationSlotSummary(res)
-                            : `${CARRO_VEICULO_LABEL} · ${slot.label}–${minutesToTime(slot.endMin)} · Disponível`
+                            : `${CARRO_VEICULO_GRADE_LABEL} · ${slot.label}–${minutesToTime(slot.endMin)} · Disponível`
                           const aria = busy
                             ? `${res.titulo || 'Reserva'}, ${res.horaInicio} a ${res.horaFim}, ocupado.`
-                            : `${CARRO_VEICULO_LABEL}, ${slot.label}, disponível`
+                            : `${CARRO_VEICULO_GRADE_LABEL}, ${slot.label}, disponível`
                           return (
                             <td key={slot.startMin}>
                               <div className={slotClass} title={slotTitle} role="img" aria-label={aria} />
@@ -240,7 +237,7 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
       </section>
 
       <section className="panel form-panel carro-view__form-panel">
-        <h2 className="panel__title carro-view__occ-section-title">Nova reserva de carro</h2>
+        <h2 className="panel__title carro-view__form-title">Nova reserva de carro</h2>
         {saveSuccess ? (
           <p className="form__success" role="status">
             Reserva de carro registada com sucesso.
@@ -256,8 +253,8 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
           </div>
         ) : null}
 
-        <form className="form" onSubmit={handleSubmit}>
-          <div className="form__grid-2col">
+        <form className="form carro-view__form" onSubmit={handleSubmit}>
+          <div className="form__grid-2col carro-view__form-grid">
             <div className="form__col">
               <div className="form__row">
                 <label htmlFor="car-data">Data</label>
