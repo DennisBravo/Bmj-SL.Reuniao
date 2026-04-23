@@ -11,6 +11,7 @@ import {
   reservationCoversDate,
   nowMinutesLocal,
   timeToMinutes,
+  reservationIsCancelled,
 } from './reservasUtils'
 
 const PERIOD_LABELS = {
@@ -50,11 +51,17 @@ export default function Painel({ reservations, salasCatalog }) {
     [reservations, periodBounds],
   )
 
+  const inPeriodActive = useMemo(
+    () => inPeriod.filter((r) => !reservationIsCancelled(r)),
+    [inPeriod],
+  )
+
   const windowMinutes = DAY_END_MIN - DAY_START_MIN
 
   const totalHoje = useMemo(() => {
     const d = todayISO()
-    return reservations.filter((r) => reservationCoversDate(r, d)).length
+    return reservations.filter((r) => reservationCoversDate(r, d) && !reservationIsCancelled(r))
+      .length
   }, [reservations])
 
   const salasOcupadasAgora = useMemo(() => {
@@ -62,7 +69,7 @@ export default function Painel({ reservations, salasCatalog }) {
     const nowM = nowMinutesLocal()
     const set = new Set()
     for (const r of reservations) {
-      if (!reservationCoversDate(r, d)) continue
+      if (reservationIsCancelled(r) || !reservationCoversDate(r, d)) continue
       const a = timeToMinutes(r.horaInicio)
       const b = timeToMinutes(r.horaFim)
       if (Number.isNaN(a) || Number.isNaN(b)) continue
@@ -76,17 +83,17 @@ export default function Painel({ reservations, salasCatalog }) {
   const taxaOcupacao = useMemo(() => {
     const capTotal = salasList.length * numDaysInPeriod * windowMinutes
     let used = 0
-    for (const r of inPeriod) {
+    for (const r of inPeriodActive) {
       used += reservationMinutesInPeriod(r, periodBounds.start, periodBounds.end)
     }
     if (capTotal <= 0) return 0
     return Math.min(100, Math.round((used / capTotal) * 1000) / 10)
-  }, [inPeriod, numDaysInPeriod, windowMinutes, periodBounds, salasList.length])
+  }, [inPeriodActive, numDaysInPeriod, windowMinutes, periodBounds, salasList.length])
 
   const ocupacaoPorSala = useMemo(() => {
     const maxPerRoom = numDaysInPeriod * windowMinutes
     const used = Object.fromEntries(salasList.map((s) => [s, 0]))
-    for (const r of inPeriod) {
+    for (const r of inPeriodActive) {
       if (used[r.sala] !== undefined) {
         used[r.sala] += reservationMinutesInPeriod(r, periodBounds.start, periodBounds.end)
       }
@@ -96,7 +103,7 @@ export default function Painel({ reservations, salasCatalog }) {
       minutes: used[sala],
       pct: maxPerRoom > 0 ? Math.min(100, (used[sala] / maxPerRoom) * 100) : 0,
     }))
-  }, [inPeriod, numDaysInPeriod, windowMinutes, periodBounds, salasList])
+  }, [inPeriodActive, numDaysInPeriod, windowMinutes, periodBounds, salasList])
 
   const tableRows = useMemo(() => {
     let list = inPeriod
@@ -145,7 +152,7 @@ export default function Painel({ reservations, salasCatalog }) {
             <td>${escapeHtml(r.emailSolicitante || '—')}</td>
             <td>${escapeHtml((r.participantes || '').replace(/\r?\n/g, ' · '))}</td>
             <td>${escapeHtml((r.observacoes || '').replace(/\r?\n/g, ' · ') || '—')}</td>
-            <td>Ativa</td>
+            <td>${reservationIsCancelled(r) ? 'Cancelada' : 'Ativa'}</td>
           </tr>`,
             )
             .join('')
@@ -349,7 +356,10 @@ export default function Painel({ reservations, salasCatalog }) {
                 </tr>
               ) : (
                 tableRows.map((r) => (
-                  <tr key={r.id}>
+                  <tr
+                    key={r.id}
+                    className={reservationIsCancelled(r) ? 'report-table__row--cancelada' : undefined}
+                  >
                     <td>
                       {r.dateFim && r.dateFim !== r.date
                         ? `${r.date} → ${r.dateFim}`
@@ -364,7 +374,7 @@ export default function Painel({ reservations, salasCatalog }) {
                     <td className="report-table__obs">
                       {r.observacoes ? r.observacoes.replace(/\r?\n/g, ' ') : '—'}
                     </td>
-                    <td>Ativa</td>
+                    <td>{reservationIsCancelled(r) ? 'Cancelada' : 'Ativa'}</td>
                   </tr>
                 ))
               )}

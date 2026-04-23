@@ -20,6 +20,7 @@ import {
   minutesToTime,
   salaNomeGradeExibicao,
   capacidadeQtdPessoasExibicao,
+  reservationIsCancelled,
 } from './reservasUtils'
 import { canAlterReservation, PERMISSAO_NEGADA_MSG } from './envConfig.js'
 import { useReservas } from './ReservasContext.jsx'
@@ -38,21 +39,23 @@ function formatCellDateBR(iso) {
 function ocupacaoDia(sala, dateISO, reservations, timeWindow) {
   const dayStart = timeWindow?.startMin ?? DAY_START_MIN
   const dayEnd = timeWindow?.endMin ?? DAY_END_MIN
-  const list = reservations.filter((r) => r.sala === sala && reservationCoversDate(r, dateISO))
-  if (list.length === 0) return { ratio: 0, list: [] }
+  const listAll = reservations.filter((r) => r.sala === sala && reservationCoversDate(r, dateISO))
+  const listActive = listAll.filter((r) => !reservationIsCancelled(r))
+  if (listAll.length === 0) return { ratio: 0, list: [] }
   const span = dayEnd - dayStart
-  if (span <= 0) return { ratio: 0, list }
+  if (span <= 0) return { ratio: 0, list: listAll }
+  if (listActive.length === 0) return { ratio: 0, list: listAll }
   let covered = 0
-  for (const r of list) {
+  for (const r of listActive) {
     const a = Math.max(dayStart, timeToMinutes(r.horaInicio))
     const b = Math.min(dayEnd, timeToMinutes(r.horaFim))
     covered += Math.max(0, b - a)
   }
-  return { ratio: Math.min(1, covered / span), list }
+  return { ratio: Math.min(1, covered / span), list: listAll }
 }
 
-function cellVariant(ratio, list) {
-  if (list.length === 0) return 'livre'
+function cellVariant(ratio, activeCount) {
+  if (activeCount === 0) return 'livre'
   if (ratio >= 0.88) return 'ocupada'
   return 'parcial'
 }
@@ -62,7 +65,12 @@ const CAR_TIME_WINDOW = { startMin: CAR_DAY_START_MIN, endMin: CAR_DAY_END_MIN }
 const MAPA_SEMANAL_CAR_ROW_KEYS = Object.freeze([CARRO_CONFLICT_SALA_KEY])
 
 export default function MapaSemanal() {
-  const { reservations, carReservations, carLoading, cancelReservationWithAudit } = useReservas()
+  const {
+    allReservations,
+    allCarReservations,
+    carLoading,
+    cancelReservationWithAudit,
+  } = useReservas()
   const embedded = Boolean(useOutletContext()?.embedded)
   const [searchParams, setSearchParams] = useSearchParams()
   const [mapaUnidade, setMapaUnidade] = useState(APP_UNIDADE.BRASILIA)
@@ -79,10 +87,10 @@ export default function MapaSemanal() {
   }, [mapaUnidade])
 
   const reservationsFiltered = useMemo(() => {
-    if (mapaUnidade === APP_UNIDADE.CARRO) return carReservations
+    if (mapaUnidade === APP_UNIDADE.CARRO) return allCarReservations
     const label = sharePointUnidadeFromAppId(mapaUnidade)
-    return filterReservasSalasPorUnidadeRecepcao(reservations, label)
-  }, [mapaUnidade, reservations, carReservations])
+    return filterReservasSalasPorUnidadeRecepcao(allReservations, label)
+  }, [mapaUnidade, allReservations, allCarReservations])
 
   useEffect(() => {
     setSalasMarcadas(new Set(salasCatalog))
@@ -324,7 +332,8 @@ export default function MapaSemanal() {
                     reservationsFiltered,
                     isCarMode ? CAR_TIME_WINDOW : null,
                   )
-                  const v = cellVariant(ratio, list)
+                  const activeCount = list.filter((r) => !reservationIsCancelled(r)).length
+                  const v = cellVariant(ratio, activeCount)
                   const label = rowLabel(sala)
                   const title = list
                     .map((r) =>
@@ -341,11 +350,11 @@ export default function MapaSemanal() {
                         title={list.length ? title : `${label} · ${iso} · Livre`}
                         onClick={() => setCellModal({ sala, dateISO: iso, list })}
                       >
-                        {list.length === 0 ? (
+                        {activeCount === 0 ? (
                           <span className="mapa-semanal__cell-label">Livre</span>
                         ) : (
                           <span className="mapa-semanal__cell-label">
-                            {list.length} reserva{list.length > 1 ? 's' : ''}
+                            {activeCount} reserva{activeCount > 1 ? 's' : ''}
                           </span>
                         )}
                       </button>
@@ -378,9 +387,15 @@ export default function MapaSemanal() {
             ) : (
               <ul className="app__modal-list">
                 {cellModal.list.map((r) => (
-                  <li key={r.id} className="app__modal-list-item">
+                  <li
+                    key={r.id}
+                    className={`app__modal-list-item${reservationIsCancelled(r) ? ' app__modal-list-item--cancelada' : ''}`}
+                  >
                     <div className="app__modal-list-text">
                       <strong>{r.titulo}</strong>
+                      {reservationIsCancelled(r) ? (
+                        <span className="mapa-semanal__badge-cancelada"> Cancelada</span>
+                      ) : null}
                       <span>
                         {r.horaInicio} – {r.horaFim}
                         {r.dateFim && r.dateFim !== r.date
@@ -392,7 +407,11 @@ export default function MapaSemanal() {
                       </span>
                       <span className="app__modal-list-sub">{r.solicitante}</span>
                     </div>
-                    {canAlterReservation(r) ? (
+                    {reservationIsCancelled(r) ? (
+                      <span className="app__modal-list-denied" role="status">
+                        —
+                      </span>
+                    ) : canAlterReservation(r) ? (
                       <button
                         type="button"
                         className="btn-ghost btn-ghost--danger"

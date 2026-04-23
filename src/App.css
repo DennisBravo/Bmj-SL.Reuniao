@@ -627,6 +627,19 @@
   background: var(--bg);
 }
 
+.app__modal-list-item--cancelada {
+  opacity: 0.9;
+  border-left: 3px solid var(--text-muted);
+}
+
+.mapa-semanal__badge-cancelada {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .app__modal-list-text {
   display: flex;
   flex-direction: column;
@@ -1720,6 +1733,19 @@
   align-self: center;
 }
 
+.recepcao-page__badge-cancelada {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.recepcao-page__status-cancelada {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
 .report-table__obs {
   max-width: 14rem;
   font-size: 0.8125rem;
@@ -1823,6 +1849,25 @@
   border: 1px solid var(--border-muted);
   border-left: 4px solid var(--primary);
   box-shadow: var(--shadow-soft);
+}
+
+.reservation-card--cancelada {
+  border-left-color: var(--text-muted);
+  opacity: 0.92;
+}
+
+.reservation-card__badge-cancelada {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.reservation-card__status-cancelada {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 .reservation-card__time {
@@ -2202,6 +2247,11 @@
 
 .report-table tbody tr:hover td {
   background: rgba(199, 154, 43, 0.06);
+}
+
+.report-table__row--cancelada td {
+  color: var(--text-muted);
+  background: rgba(100, 100, 100, 0.06);
 }
 
 .report-table__sala {

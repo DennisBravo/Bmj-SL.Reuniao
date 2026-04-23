@@ -9,6 +9,7 @@ import {
   APP_UNIDADE,
   sharePointUnidadeFromAppId,
   filterReservasSalasPorUnidadeRecepcao,
+  reservationIsCancelled,
 } from '../reservasUtils'
 import { canAlterReservation, PERMISSAO_NEGADA_MSG } from '../envConfig.js'
 import CancelarReservaModal from '../components/CancelarReservaModal.jsx'
@@ -18,7 +19,8 @@ import UnidadeSelector from '../components/UnidadeSelector.jsx'
 export default function RecepcaoReservasDoDia() {
   const {
     reservations,
-    carReservations,
+    allReservations,
+    allCarReservations,
     carLoading,
     loading,
     updateReservation,
@@ -41,15 +43,15 @@ export default function RecepcaoReservasDoDia() {
 
   const sortedDayList = useMemo(() => {
     if (recepcaoUnidade === APP_UNIDADE.CARRO) {
-      return [...carReservations]
+      return [...allCarReservations]
         .filter((r) => reservationCoversDate(r, selectedDate))
         .sort((a, b) => timeToMinutes(a.horaInicio) - timeToMinutes(b.horaInicio))
     }
     const label = sharePointUnidadeFromAppId(recepcaoUnidade)
-    return filterReservasSalasPorUnidadeRecepcao(reservations, label)
+    return filterReservasSalasPorUnidadeRecepcao(allReservations, label)
       .filter((r) => reservationCoversDate(r, selectedDate))
       .sort((a, b) => timeToMinutes(a.horaInicio) - timeToMinutes(b.horaInicio))
-  }, [recepcaoUnidade, reservations, carReservations, selectedDate])
+  }, [recepcaoUnidade, allReservations, allCarReservations, selectedDate])
 
   const isCarMode = recepcaoUnidade === APP_UNIDADE.CARRO
 
@@ -89,15 +91,24 @@ export default function RecepcaoReservasDoDia() {
             <ul className="reservations">
               {sortedDayList.map((r) => {
                 const isCar = r.tipoReserva === 'carro'
+                const isCancelled = reservationIsCancelled(r)
                 return (
-                  <li key={r.id} className="reservation-card">
+                  <li
+                    key={r.id}
+                    className={`reservation-card${isCancelled ? ' reservation-card--cancelada' : ''}`}
+                  >
                     <div className="reservation-card__time">
                       {r.horaInicio} – {r.horaFim}
                       {isCar
                         ? ` · ${r.veiculo || 'Carro'}${r.unidade ? ` · ${r.unidade}` : ''}`
                         : ` · ${r.sala}`}
                     </div>
-                    <div className="reservation-card__title">{r.titulo}</div>
+                    <div className="reservation-card__title">
+                      {r.titulo}
+                      {isCancelled ? (
+                        <span className="reservation-card__badge-cancelada"> Cancelada</span>
+                      ) : null}
+                    </div>
                     <div className="reservation-card__meta">
                       {isCar ? (
                         <>
@@ -157,7 +168,11 @@ export default function RecepcaoReservasDoDia() {
                       ) : null}
                     </div>
                     <div className="reservation-card__actions">
-                      {canAlterReservation(r) ? (
+                      {isCancelled ? (
+                        <span className="reservation-card__status-cancelada" role="status">
+                          Registo cancelado (mantido para auditoria).
+                        </span>
+                      ) : canAlterReservation(r) ? (
                         <>
                           {!isCar && r.graphItemId ? (
                             <button

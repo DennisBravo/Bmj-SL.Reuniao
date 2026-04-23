@@ -14,14 +14,14 @@ import {
 
 /** Relatórios de salas (Painel) ou movimento do carro, conforme a unidade escolhida. */
 export default function RecepcaoRelatorios() {
-  const { reservations } = useReservas()
+  const { allReservations } = useReservas()
   const [recepcaoUnidade, setRecepcaoUnidade] = useState(APP_UNIDADE.BRASILIA)
 
   const reservasFiltradas = useMemo(() => {
     if (recepcaoUnidade === APP_UNIDADE.CARRO) return []
     const label = sharePointUnidadeFromAppId(recepcaoUnidade)
-    return filterReservasSalasPorUnidadeRecepcao(reservations, label)
-  }, [recepcaoUnidade, reservations])
+    return filterReservasSalasPorUnidadeRecepcao(allReservations, label)
+  }, [recepcaoUnidade, allReservations])
 
   const salasCatalog =
     recepcaoUnidade === APP_UNIDADE.SAO_PAULO

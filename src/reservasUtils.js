@@ -149,6 +149,16 @@ export function isReservationActive(r) {
   return r && !r.deletedAt
 }
 
+/** Cancelada (soft-delete em `deletedAt` ou coluna `Status` na lista). */
+export function reservationIsCancelled(r) {
+  if (!r) return false
+  if (r.deletedAt) return true
+  const st = String(r.status ?? '')
+    .trim()
+    .toLowerCase()
+  return st === 'cancelado' || st === 'cancelada' || st === 'inativo'
+}
+
 /** `interna` | `externa` (reservas antigas sem campo → interna). */
 export function reservationTipoReuniao(r) {
   const t = String(r?.tipoReuniao ?? '').toLowerCase()

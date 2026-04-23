@@ -8,13 +8,14 @@ import {
   APP_UNIDADE,
   sharePointUnidadeFromAppId,
   filterReservasSalasPorUnidadeRecepcao,
+  reservationIsCancelled,
 } from '../reservasUtils'
 import { canAlterReservation, PERMISSAO_NEGADA_MSG } from '../envConfig.js'
 import CancelarReservaModal from '../components/CancelarReservaModal.jsx'
 import UnidadeSelector from '../components/UnidadeSelector.jsx'
 
 export default function RecepcaoCancelar() {
-  const { reservations, carReservations, carLoading, cancelReservationWithAudit } = useReservas()
+  const { allReservations, allCarReservations, carLoading, cancelReservationWithAudit } = useReservas()
   const [recepcaoUnidade, setRecepcaoUnidade] = useState(APP_UNIDADE.BRASILIA)
   const [filtroData, setFiltroData] = useState(() => todayISO())
   const [cancelTarget, setCancelTarget] = useState(null)
@@ -23,15 +24,15 @@ export default function RecepcaoCancelar() {
 
   const lista = useMemo(() => {
     if (isCarMode) {
-      return [...carReservations]
+      return [...allCarReservations]
         .filter((r) => reservationCoversDate(r, filtroData))
         .sort((a, b) => timeToMinutes(a.horaInicio) - timeToMinutes(b.horaInicio))
     }
     const label = sharePointUnidadeFromAppId(recepcaoUnidade)
-    return filterReservasSalasPorUnidadeRecepcao(reservations, label)
+    return filterReservasSalasPorUnidadeRecepcao(allReservations, label)
       .filter((r) => reservationCoversDate(r, filtroData))
       .sort((a, b) => timeToMinutes(a.horaInicio) - timeToMinutes(b.horaInicio))
-  }, [isCarMode, recepcaoUnidade, reservations, carReservations, filtroData])
+  }, [isCarMode, recepcaoUnidade, allReservations, allCarReservations, filtroData])
 
   return (
     <div className="recepcao-page">
@@ -65,10 +66,17 @@ export default function RecepcaoCancelar() {
           <ul className="app__modal-list recepcao-page__list">
             {lista.map((r) => {
               const isCar = r.tipoReserva === 'carro'
+              const isCancelled = reservationIsCancelled(r)
               return (
-                <li key={r.id} className="app__modal-list-item">
+                <li
+                  key={r.id}
+                  className={`app__modal-list-item${isCancelled ? ' app__modal-list-item--cancelada' : ''}`}
+                >
                   <div className="app__modal-list-text">
                     <strong>{r.titulo}</strong>
+                    {isCancelled ? (
+                      <span className="recepcao-page__badge-cancelada"> Cancelada</span>
+                    ) : null}
                     <span>
                       {r.horaInicio} – {r.horaFim}
                       {isCar
@@ -78,7 +86,11 @@ export default function RecepcaoCancelar() {
                     </span>
                     <span className="app__modal-list-sub">{r.solicitante}</span>
                   </div>
-                  {canAlterReservation(r) ? (
+                  {isCancelled ? (
+                    <span className="recepcao-page__status-cancelada" role="status">
+                      —
+                    </span>
+                  ) : canAlterReservation(r) ? (
                     <button
                       type="button"
                       className="btn-ghost btn-ghost--danger"
