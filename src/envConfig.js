@@ -40,4 +40,20 @@ export function canAlterReservation(reservation) {
   return false
 }
 
+/**
+ * Grade principal (app): só o criador pode cancelar a própria reserva (`VITE_USER_EMAIL` vs criador).
+ * Admins não têm bypass aqui — usar Admin Center (`canAlterReservation`).
+ * Sem `VITE_USER_EMAIL` e sem admins configurados: permissivo (dev), igual a `canAlterReservation`.
+ */
+export function canUserCancel(reservation) {
+  if (!reservation || reservation.deletedAt) return false
+  const me = getCurrentUserEmail()
+  const creator = normalizeEmail(reservation.createdByEmail || reservation.emailSolicitante || '')
+  const admins = parseAdminEmails()
+
+  if (!me && admins.length === 0) return true
+  if (!me) return false
+  return Boolean(creator && me === creator)
+}
+
 export const PERMISSAO_NEGADA_MSG = 'Você não possui permissão para alterar esta reserva.'

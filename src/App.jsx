@@ -30,6 +30,7 @@ import {
 import { useReservas } from './ReservasContext.jsx'
 import BmjLogo from './components/BmjLogo.jsx'
 import ReservaSlotDetalheModal from './components/ReservaSlotDetalheModal.jsx'
+import CancelarReservaModal from './components/CancelarReservaModal.jsx'
 import { M365EmailAutocomplete, M365ParticipantesAutocomplete } from './components/M365UserAutocompleteFields.jsx'
 import ReservaFormTextModal from './components/ReservaFormTextModal.jsx'
 import UnidadeSelector from './components/UnidadeSelector.jsx'
@@ -53,6 +54,7 @@ export default function App() {
     loading,
     error,
     clearError,
+    cancelReservationWithAudit,
     carReservations,
     addCarReservation,
     carLoading,
@@ -87,6 +89,7 @@ export default function App() {
   })
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [detalheReserva, setDetalheReserva] = useState(null)
+  const [cancelSlotTarget, setCancelSlotTarget] = useState(null)
   const [slotHoverPreview, setSlotHoverPreview] = useState(null)
   const hoverHideTimerRef = useRef(null)
   const prevTipoReuniaoRef = useRef(form.tipoReuniao)
@@ -944,6 +947,18 @@ export default function App() {
         <ReservaSlotDetalheModal
           reservation={detalheReserva}
           onClose={() => setDetalheReserva(null)}
+          onRequestCancel={() => {
+            setCancelSlotTarget(detalheReserva)
+            setDetalheReserva(null)
+          }}
+        />
+      ) : null}
+
+      {cancelSlotTarget ? (
+        <CancelarReservaModal
+          reservation={cancelSlotTarget}
+          onClose={() => setCancelSlotTarget(null)}
+          onConfirm={(payload) => cancelReservationWithAudit(cancelSlotTarget, payload)}
         />
       ) : null}
 
