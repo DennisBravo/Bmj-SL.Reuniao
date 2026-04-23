@@ -18,6 +18,8 @@ import {
   CAR_DAY_START_MIN,
   CAR_DAY_END_MIN,
   minutesToTime,
+  salaNomeGradeExibicao,
+  capacidadeQtdPessoasExibicao,
 } from './reservasUtils'
 import { canAlterReservation, PERMISSAO_NEGADA_MSG } from './envConfig.js'
 import { useReservas } from './ReservasContext.jsx'
@@ -101,6 +103,9 @@ export default function MapaSemanal() {
 
   const isCarMode = mapaUnidade === APP_UNIDADE.CARRO
 
+  const capUnidadeSalas =
+    mapaUnidade === APP_UNIDADE.SAO_PAULO ? APP_UNIDADE.SAO_PAULO : APP_UNIDADE.BRASILIA
+
   function toggleSala(sala) {
     setSalasMarcadas((prev) => {
       const next = new Set(prev)
@@ -119,7 +124,12 @@ export default function MapaSemanal() {
   }
 
   function rowLabel(salaKey) {
-    return salaKey === CARRO_CONFLICT_SALA_KEY ? CARRO_VEICULO_LABEL : salaKey
+    return salaKey === CARRO_CONFLICT_SALA_KEY ? CARRO_VEICULO_LABEL : salaNomeGradeExibicao(salaKey)
+  }
+
+  function qtdLabel(salaKey) {
+    if (salaKey === CARRO_CONFLICT_SALA_KEY) return '—'
+    return capacidadeQtdPessoasExibicao(salaKey, capUnidadeSalas)
   }
 
   function prevWeek() {
@@ -206,18 +216,28 @@ export default function MapaSemanal() {
                 </div>
               </div>
               <ul className="mapa-semanal__salas-menu" aria-labelledby="mapa-salas-legend">
-                {salasCatalog.map((sala) => (
-                  <li key={sala} className="mapa-semanal__salas-menu-item">
-                    <label className="mapa-semanal__sala-chip">
-                      <input
-                        type="checkbox"
-                        checked={salasMarcadas.has(sala)}
-                        onChange={() => toggleSala(sala)}
-                      />
-                      <span>{sala}</span>
-                    </label>
-                  </li>
-                ))}
+                {salasCatalog.map((sala) => {
+                  const qtd = qtdLabel(sala)
+                  return (
+                    <li key={sala} className="mapa-semanal__salas-menu-item">
+                      <label className="mapa-semanal__sala-chip">
+                        <input
+                          type="checkbox"
+                          checked={salasMarcadas.has(sala)}
+                          onChange={() => toggleSala(sala)}
+                        />
+                        <span className="mapa-semanal__sala-chip-body">
+                          <span className="mapa-semanal__sala-chip-name">
+                            {salaNomeGradeExibicao(sala)}
+                          </span>
+                          <span className="mapa-semanal__sala-chip-qtd" title={`QTD pessoas: ${qtd}`}>
+                            {qtd}
+                          </span>
+                        </span>
+                      </label>
+                    </li>
+                  )
+                })}
               </ul>
               {salasFiltradas.length === 0 ? (
                 <p className="mapa-semanal__salas-hint">
@@ -260,7 +280,16 @@ export default function MapaSemanal() {
           <thead>
             <tr>
               <th scope="col" className="mapa-semanal__th-sala">
-                {isCarMode ? 'Veículo' : 'Sala'}
+                {isCarMode ? (
+                  'Veículo'
+                ) : (
+                  <>
+                    <span className="mapa-semanal__th-sala-line">Sala</span>
+                    <span className="mapa-semanal__th-sala-line mapa-semanal__th-sala-line--sub">
+                      QTD
+                    </span>
+                  </>
+                )}
               </th>
               {weekDays.map((iso, i) => (
                 <th key={iso} scope="col" className="mapa-semanal__th-day">
@@ -274,7 +303,19 @@ export default function MapaSemanal() {
             {salasFiltradas.map((sala) => (
               <tr key={sala}>
                 <th scope="row" className="mapa-semanal__row-sala">
-                  {rowLabel(sala)}
+                  {isCarMode ? (
+                    rowLabel(sala)
+                  ) : (
+                    <span className="mapa-semanal__row-sala-inner">
+                      <span className="mapa-semanal__row-sala-name">{salaNomeGradeExibicao(sala)}</span>
+                      <span
+                        className="mapa-semanal__row-sala-qtd"
+                        title={`Capacidade: ${qtdLabel(sala)}`}
+                      >
+                        {qtdLabel(sala)}
+                      </span>
+                    </span>
+                  )}
                 </th>
                 {weekDays.map((iso) => {
                   const { ratio, list } = ocupacaoDia(
