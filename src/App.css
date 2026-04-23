@@ -2301,6 +2301,10 @@ a.app__rececao-menu-item {
   margin-bottom: 14px;
 }
 
+.mapa-semanal__toolbar-unidade {
+  flex: 1 1 100%;
+}
+
 .mapa-semanal__week-nav {
   display: flex;
   flex-wrap: wrap;
