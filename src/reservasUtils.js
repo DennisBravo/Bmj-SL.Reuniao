@@ -560,6 +560,12 @@ export function capacidadeQtdPessoasExibicao(salaNome, appUnidadeId) {
 /** Nome exibido na lista para a sala «Espaço Multiuso» (Brasília). */
 export const SALA_ESPACO_MULTIUSO = 'Espaço Multiuso'
 
+/** Salas Brasília para mapa semanal, recepção e relatórios (alinhado a `CAP_QTD_BRASILIA_RAW`). */
+export const SALAS_RECEPCAO_BRASILIA = Object.freeze([
+  SALA_ESPACO_MULTIUSO,
+  ...Array.from({ length: 11 }, (_, i) => `Reunião ${String(i + 1).padStart(2, '0')}`),
+])
+
 export function isSalaEspaçoMultiuso(salaNome) {
   const s = String(salaNome || '')
     .trim()

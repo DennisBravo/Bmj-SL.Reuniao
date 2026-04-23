@@ -9,6 +9,7 @@ import {
   sharePointUnidadeFromAppId,
   filterReservasSalasPorUnidadeRecepcao,
   SALAS_RECEPCAO_SAO_PAULO,
+  SALAS_RECEPCAO_BRASILIA,
 } from '../reservasUtils'
 
 /** Relatórios de salas (Painel) ou movimento do carro, conforme a unidade escolhida. */
@@ -23,7 +24,11 @@ export default function RecepcaoRelatorios() {
   }, [recepcaoUnidade, reservations])
 
   const salasCatalog =
-    recepcaoUnidade === APP_UNIDADE.SAO_PAULO ? SALAS_RECEPCAO_SAO_PAULO : undefined
+    recepcaoUnidade === APP_UNIDADE.SAO_PAULO
+      ? SALAS_RECEPCAO_SAO_PAULO
+      : recepcaoUnidade === APP_UNIDADE.BRASILIA
+        ? SALAS_RECEPCAO_BRASILIA
+        : undefined
 
   return (
     <div className="recepcao-painel-wrap">

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useOutletContext, useSearchParams } from 'react-router-dom'
 import {
-  SALAS,
   DAY_START_MIN,
   DAY_END_MIN,
   timeToMinutes,
@@ -13,6 +12,7 @@ import {
   sharePointUnidadeFromAppId,
   filterReservasSalasPorUnidadeRecepcao,
   SALAS_RECEPCAO_SAO_PAULO,
+  SALAS_RECEPCAO_BRASILIA,
   CARRO_CONFLICT_SALA_KEY,
   CARRO_VEICULO_LABEL,
   CAR_DAY_START_MIN,
@@ -68,14 +68,14 @@ export default function MapaSemanal() {
   const [mapaUnidade, setMapaUnidade] = useState(APP_UNIDADE.BRASILIA)
   const [weekMonday, setWeekMonday] = useState(() => mondayOfWeekContaining(todayISO()))
   /** Salas (ou chave do carro) visíveis no mapa; vazio = nenhuma linha. */
-  const [salasMarcadas, setSalasMarcadas] = useState(() => new Set(SALAS))
+  const [salasMarcadas, setSalasMarcadas] = useState(() => new Set(SALAS_RECEPCAO_BRASILIA))
   const [cellModal, setCellModal] = useState(null)
   const [cancelTarget, setCancelTarget] = useState(null)
 
   const salasCatalog = useMemo(() => {
     if (mapaUnidade === APP_UNIDADE.CARRO) return MAPA_SEMANAL_CAR_ROW_KEYS
     if (mapaUnidade === APP_UNIDADE.SAO_PAULO) return SALAS_RECEPCAO_SAO_PAULO
-    return SALAS
+    return SALAS_RECEPCAO_BRASILIA
   }, [mapaUnidade])
 
   const reservationsFiltered = useMemo(() => {
