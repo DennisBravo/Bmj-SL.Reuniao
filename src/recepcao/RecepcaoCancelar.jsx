@@ -9,13 +9,20 @@ import {
   sharePointUnidadeFromAppId,
   filterReservasSalasPorUnidadeRecepcao,
   reservationIsCancelled,
+  auditCancellationsAsReservationsForDay,
 } from '../reservasUtils'
 import { canAlterReservation, PERMISSAO_NEGADA_MSG } from '../envConfig.js'
 import CancelarReservaModal from '../components/CancelarReservaModal.jsx'
 import UnidadeSelector from '../components/UnidadeSelector.jsx'
 
 export default function RecepcaoCancelar() {
-  const { allReservations, allCarReservations, carLoading, cancelReservationWithAudit } = useReservas()
+  const {
+    allReservations,
+    allCarReservations,
+    loading,
+    carLoading,
+    cancelReservationWithAudit,
+  } = useReservas()
   const [recepcaoUnidade, setRecepcaoUnidade] = useState(APP_UNIDADE.BRASILIA)
   const [filtroData, setFiltroData] = useState(() => todayISO())
   const [cancelTarget, setCancelTarget] = useState(null)
@@ -23,15 +30,24 @@ export default function RecepcaoCancelar() {
   const isCarMode = recepcaoUnidade === APP_UNIDADE.CARRO
 
   const lista = useMemo(() => {
+    let base
     if (isCarMode) {
-      return [...allCarReservations]
-        .filter((r) => reservationCoversDate(r, filtroData))
-        .sort((a, b) => timeToMinutes(a.horaInicio) - timeToMinutes(b.horaInicio))
+      base = [...allCarReservations].filter((r) => reservationCoversDate(r, filtroData))
+    } else {
+      const label = sharePointUnidadeFromAppId(recepcaoUnidade)
+      base = filterReservasSalasPorUnidadeRecepcao(allReservations, label).filter((r) =>
+        reservationCoversDate(r, filtroData),
+      )
     }
-    const label = sharePointUnidadeFromAppId(recepcaoUnidade)
-    return filterReservasSalasPorUnidadeRecepcao(allReservations, label)
-      .filter((r) => reservationCoversDate(r, filtroData))
-      .sort((a, b) => timeToMinutes(a.horaInicio) - timeToMinutes(b.horaInicio))
+    const extras = auditCancellationsAsReservationsForDay(filtroData, { carOnly: isCarMode })
+    const seen = new Set(base.map((r) => String(r.id)))
+    for (const row of extras) {
+      if (!seen.has(String(row.id))) {
+        base.push(row)
+        seen.add(String(row.id))
+      }
+    }
+    return base.sort((a, b) => timeToMinutes(a.horaInicio) - timeToMinutes(b.horaInicio))
   }, [isCarMode, recepcaoUnidade, allReservations, allCarReservations, filtroData])
 
   return (
@@ -58,7 +74,9 @@ export default function RecepcaoCancelar() {
           <UnidadeSelector value={recepcaoUnidade} onChange={setRecepcaoUnidade} />
         </div>
 
-        {isCarMode && carLoading ? (
+        {!isCarMode && loading ? (
+          <p className="recepcao-page__empty">A carregar reservas…</p>
+        ) : isCarMode && carLoading ? (
           <p className="recepcao-page__empty">A carregar reservas de carro…</p>
         ) : lista.length === 0 ? (
           <p className="recepcao-page__empty">Nenhuma reserva nesta data.</p>

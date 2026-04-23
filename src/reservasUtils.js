@@ -478,6 +478,81 @@ export function sharePointUnidadeFromAppId(appUnidadeId) {
   return ''
 }
 
+function readAuditLog() {
+  try {
+    const raw = localStorage.getItem(AUDIT_STORAGE_KEY)
+    const p = JSON.parse(raw || '[]')
+    return Array.isArray(p) ? p : []
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Cancelamentos gravados por `appendAudit` (mesmo dia em `dateISO`), como objetos de reserva.
+ * Usado na receção quando o GET do SharePoint não devolve itens cancelados ou há atraso de índice.
+ */
+export function auditCancellationsAsReservationsForDay(dateISO, { carOnly = false } = {}) {
+  if (!dateISO || typeof dateISO !== 'string') return []
+  const log = readAuditLog()
+  const latestById = new Map()
+  for (const e of log) {
+    if (!e || e.tipo !== 'cancelamento') continue
+    const car = e.origem === 'carro'
+    if (carOnly !== car) continue
+    const id = String(e.reservaId ?? '').trim()
+    if (!id) continue
+    const row = car
+      ? {
+          id,
+          graphItemId: null,
+          tipoReserva: 'carro',
+          sala: CARRO_CONFLICT_SALA_KEY,
+          titulo: e.titulo || 'Reserva de carro',
+          date: e.date || '',
+          dateFim: e.dateFim || null,
+          horaInicio: e.horaInicio || '',
+          horaFim: e.horaFim || '',
+          solicitante: e.solicitante || '',
+          destino: e.destino != null ? String(e.destino) : '',
+          veiculo: '',
+          motorista: '',
+          unidade: '',
+          tipoReuniao: 'interna',
+          deletedAt: e.deletedAt || e.at,
+          status: 'Cancelado',
+          observacoes: e.motivo
+            ? `Cancelado: ${e.motivo}${e.motivoDetalhe ? ` — ${e.motivoDetalhe}` : ''}`
+            : '',
+        }
+      : {
+          id,
+          graphItemId: null,
+          titulo: e.titulo || 'Reserva',
+          sala: e.sala || '',
+          date: e.date || '',
+          dateFim: e.dateFim || null,
+          horaInicio: e.horaInicio || '',
+          horaFim: e.horaFim || '',
+          solicitante: e.solicitante || '',
+          unidade: '',
+          tipoReuniao: 'interna',
+          deletedAt: e.deletedAt || e.at,
+          status: 'Cancelado',
+          observacoes: e.motivo
+            ? `Cancelado: ${e.motivo}${e.motivoDetalhe ? ` — ${e.motivoDetalhe}` : ''}`
+            : '',
+        }
+    if (!reservationCoversDate(row, dateISO)) continue
+    const prev = latestById.get(id)
+    const at = String(e.at || '')
+    if (!prev || at > String(prev._auditAt || '')) {
+      latestById.set(id, { ...row, _auditAt: at })
+    }
+  }
+  return [...latestById.values()].map(({ _auditAt, ...r }) => r)
+}
+
 function normCapKey(s) {
   return String(s || '')
     .trim()

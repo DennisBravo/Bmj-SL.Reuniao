@@ -10,6 +10,7 @@ import {
   sharePointUnidadeFromAppId,
   filterReservasSalasPorUnidadeRecepcao,
   reservationIsCancelled,
+  auditCancellationsAsReservationsForDay,
 } from '../reservasUtils'
 import { canAlterReservation, PERMISSAO_NEGADA_MSG } from '../envConfig.js'
 import CancelarReservaModal from '../components/CancelarReservaModal.jsx'
@@ -42,15 +43,26 @@ export default function RecepcaoReservasDoDia() {
   }, [loading])
 
   const sortedDayList = useMemo(() => {
+    let base
     if (recepcaoUnidade === APP_UNIDADE.CARRO) {
-      return [...allCarReservations]
-        .filter((r) => reservationCoversDate(r, selectedDate))
-        .sort((a, b) => timeToMinutes(a.horaInicio) - timeToMinutes(b.horaInicio))
+      base = [...allCarReservations].filter((r) => reservationCoversDate(r, selectedDate))
+    } else {
+      const label = sharePointUnidadeFromAppId(recepcaoUnidade)
+      base = filterReservasSalasPorUnidadeRecepcao(allReservations, label).filter((r) =>
+        reservationCoversDate(r, selectedDate),
+      )
     }
-    const label = sharePointUnidadeFromAppId(recepcaoUnidade)
-    return filterReservasSalasPorUnidadeRecepcao(allReservations, label)
-      .filter((r) => reservationCoversDate(r, selectedDate))
-      .sort((a, b) => timeToMinutes(a.horaInicio) - timeToMinutes(b.horaInicio))
+    const extras = auditCancellationsAsReservationsForDay(selectedDate, {
+      carOnly: recepcaoUnidade === APP_UNIDADE.CARRO,
+    })
+    const seen = new Set(base.map((r) => String(r.id)))
+    for (const row of extras) {
+      if (!seen.has(String(row.id))) {
+        base.push(row)
+        seen.add(String(row.id))
+      }
+    }
+    return base.sort((a, b) => timeToMinutes(a.horaInicio) - timeToMinutes(b.horaInicio))
   }, [recepcaoUnidade, allReservations, allCarReservations, selectedDate])
 
   const isCarMode = recepcaoUnidade === APP_UNIDADE.CARRO
