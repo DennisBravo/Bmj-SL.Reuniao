@@ -222,11 +222,11 @@
   box-sizing: border-box;
 }
 
-/* Grade do carro: espaçador invisível + Corolla + slots (sem 19:00 / 19:30); min-width alinhado à grade de salas */
+/* Grade do carro: espaçador + Corolla + slots 06:00–23:30 (mais colunas que salas) */
 .availability-grid--carro {
   --availability-sala-w: 76px;
   --availability-head-primary-h: 2rem;
-  min-width: 740px;
+  min-width: 1180px;
   width: 100%;
 }
 

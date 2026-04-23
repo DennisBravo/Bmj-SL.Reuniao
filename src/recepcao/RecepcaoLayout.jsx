@@ -5,6 +5,7 @@ const NAV_ITEMS = [
   { to: 'reservas-do-dia', label: 'Reserva do dia' },
   { to: 'cancelar', label: 'Cancelar reserva' },
   { to: 'relatorios', label: 'Relatórios' },
+  { to: 'movimento-carro', label: 'Movimento do carro' },
   { to: 'manuais', label: 'Manuais das salas' },
   { to: 'suporte', label: 'Informações e suporte da sala' },
   { to: 'acesso', label: 'Controle de acesso (login)' },

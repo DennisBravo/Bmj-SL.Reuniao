@@ -34,9 +34,18 @@ export function buildGridTimeSlots() {
   return slots
 }
 
-/** Grade do carro: `buildGridTimeSlots` sem as colunas 19:00 e 19:30. */
+/** Início da grade do carro (06:00). */
+export const CAR_GRID_START_MIN = 6 * 60
+/** Fim exclusivo da grade: último slot 23:00–23:30. */
+export const CAR_GRID_END_MIN = 23 * 60 + 30
+
+/** Slots da grade de ocupação do carro (06:00 … 23:30, passos de `SLOT_MINUTES`). */
 export function buildCarGridTimeSlots() {
-  return buildGridTimeSlots().filter((s) => s.startMin !== 19 * 60 && s.startMin !== 19 * 60 + 30)
+  const slots = []
+  for (let m = CAR_GRID_START_MIN; m < CAR_GRID_END_MIN; m += SLOT_MINUTES) {
+    slots.push({ startMin: m, endMin: m + SLOT_MINUTES, label: minutesToTime(m) })
+  }
+  return slots
 }
 
 export function pad2(n) {
@@ -435,9 +444,9 @@ export const CARRO_VEICULO_GRADE_LABEL = 'Corolla'
 
 export const CARRO_MOTORISTA_LABEL = 'Charles Bueno'
 
-/** Horário permitido para reserva de carro (07h–20h), em minutos desde meia-noite. */
-export const CAR_DAY_START_MIN = 7 * 60
-export const CAR_DAY_END_MIN = 20 * 60
+/** Horário permitido para reserva de carro (06:00–23:30), em minutos desde meia-noite. */
+export const CAR_DAY_START_MIN = CAR_GRID_START_MIN
+export const CAR_DAY_END_MIN = CAR_GRID_END_MIN
 
 export const APP_UNIDADE = {
   BRASILIA: 'brasilia',
