@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { reservationTipoReuniao } from '../reservasUtils'
 import { canUserCancel } from '../envConfig.js'
 
-export default function ReservaSlotDetalheModal({ reservation, onClose, onRequestCancel }) {
+export default function ReservaSlotDetalheModal({ reservation, onClose, onRequestCancel, identityEmails }) {
   useEffect(() => {
     function onKey(e) {
       if (e.key === 'Escape') onClose()
@@ -76,7 +76,7 @@ export default function ReservaSlotDetalheModal({ reservation, onClose, onReques
           </p>
         </div>
 
-        {canUserCancel(r) && typeof onRequestCancel === 'function' ? (
+        {canUserCancel(r, identityEmails) && typeof onRequestCancel === 'function' ? (
           <div className="app__modal-actions app__modal-actions--slot-detail-cancel">
             <button
               type="button"

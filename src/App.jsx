@@ -35,7 +35,13 @@ import { M365EmailAutocomplete, M365ParticipantesAutocomplete } from './componen
 import ReservaFormTextModal from './components/ReservaFormTextModal.jsx'
 import UnidadeSelector from './components/UnidadeSelector.jsx'
 import ReservaCarroView from './components/ReservaCarroView.jsx'
-import { getCurrentUserEmail, normalizeEmail } from './envConfig.js'
+import {
+  getCurrentUserEmail,
+  normalizeEmail,
+  getCurrentUserEmailAliasesFromEnv,
+  mergeNormalizedEmailLists,
+  emailsFromAuthMePayload,
+} from './envConfig.js'
 import { notifyTeamsNewReservationWithNotes } from './teamsWebhook.js'
 import './App.css'
 
@@ -90,6 +96,7 @@ export default function App() {
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [detalheReserva, setDetalheReserva] = useState(null)
   const [cancelSlotTarget, setCancelSlotTarget] = useState(null)
+  const [identityEmails, setIdentityEmails] = useState(() => getCurrentUserEmailAliasesFromEnv())
   const [slotHoverPreview, setSlotHoverPreview] = useState(null)
   const hoverHideTimerRef = useRef(null)
   const prevTipoReuniaoRef = useRef(form.tipoReuniao)
@@ -222,6 +229,28 @@ export default function App() {
     cancelHoverHide()
     setDetalheReserva(null)
   }, [form.dataInicio, cancelHoverHide])
+
+  /** Identidade para «sou o criador?»: `VITE_USER_EMAIL` + e-mail do login no Azure SWA (`/.auth/me`). */
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('/.auth/me', { credentials: 'include' })
+        if (!res.ok || cancelled) return
+        const data = await res.json().catch(() => ({}))
+        if (cancelled) return
+        const fromAuth = emailsFromAuthMePayload(data)
+        if (fromAuth.length) {
+          setIdentityEmails((prev) => mergeNormalizedEmailLists(prev, fromAuth))
+        }
+      } catch {
+        /* sem /.auth/me ou offline */
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   /** Ao escolher «Externa», abre o modal de clientes (rascunho = valor actual). */
   useEffect(() => {
@@ -946,6 +975,7 @@ export default function App() {
       {detalheReserva ? (
         <ReservaSlotDetalheModal
           reservation={detalheReserva}
+          identityEmails={identityEmails}
           onClose={() => setDetalheReserva(null)}
           onRequestCancel={() => {
             setCancelSlotTarget(detalheReserva)
