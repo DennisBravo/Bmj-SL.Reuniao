@@ -52,7 +52,14 @@ function graphListItemToReservation(item) {
     criadoVia: f.CriadoVia || '',
     createdAt: item.createdDateTime || '',
     updatedAt: item.lastModifiedDateTime || '',
-    deletedAt: f.DeletadoEm || null,
+    deletedAt: (() => {
+      const st = (f.Status != null ? String(f.Status) : '').trim().toLowerCase()
+      if (f.DeletadoEm) return f.DeletadoEm
+      if (st === 'cancelado' || st === 'inativo') {
+        return item.lastModifiedDateTime || new Date().toISOString()
+      }
+      return null
+    })(),
     deletedByEmail: f.DeletadoPorEmail || null,
     createdByEmail: email,
   }
@@ -336,70 +343,128 @@ export function ReservasProvider({ children }) {
     [loadCarReservationsFromServer],
   )
 
+  const updateCarReservation = useCallback(
+    async (payload) => {
+      setCarError(null)
+      setCarLoading(true)
+      try {
+        const res = await fetch(CARROS_API_URL, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...payload, _patch: true }),
+        })
+        const text = await res.text()
+        let data = {}
+        try {
+          data = text ? JSON.parse(text) : {}
+        } catch {
+          data = {}
+        }
+        if (!res.ok) {
+          const msg = data.detail || data.error || `Erro ${res.status} ao atualizar reserva de carro.`
+          throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg))
+        }
+        const refreshed = await loadCarReservationsFromServer()
+        if (!refreshed) {
+          throw new Error('Reserva atualizada, mas não foi possível recarregar a lista de carros.')
+        }
+      } catch (e) {
+        const msg = e.message || 'Não foi possível atualizar a reserva de carro.'
+        setCarError(msg)
+        throw e
+      } finally {
+        setCarLoading(false)
+      }
+    },
+    [loadCarReservationsFromServer],
+  )
+
   const removeReservation = useCallback((id) => {
     setAllReservations((prev) => prev.filter((r) => r.id !== id))
   }, [])
 
-  const cancelReservationWithAudit = useCallback((r, { reason, reasonDetail, cancelledBy, cancelledByEmail }) => {
-    if (!canAlterReservation(r)) {
-      return false
-    }
-    const now = new Date().toISOString()
-    const byEmail = normalizeEmail(cancelledByEmail || '')
-    const byLabel = (cancelledBy || '').trim() || 'Recepção'
+  const cancelReservationWithAudit = useCallback(
+    async (r, { reason, reasonDetail, cancelledBy, cancelledByEmail }) => {
+      if (!canAlterReservation(r)) {
+        return false
+      }
+      const now = new Date().toISOString()
+      const byEmail = normalizeEmail(cancelledByEmail || '')
+      const byLabel = (cancelledBy || '').trim() || 'Recepção'
+      const isCar = r && r.tipoReserva === 'carro'
 
-    const isCar = r && r.tipoReserva === 'carro'
+      const fields = {
+        Status: 'Cancelado',
+        DeletadoEm: now,
+      }
+      if (byEmail) fields.DeletadoPorEmail = byEmail
 
-    if (isCar) {
-      setAllCarReservations((prev) =>
-        prev.map((x) =>
-          x.id === r.id
-            ? {
-                ...x,
-                deletedAt: now,
-                deletedByEmail: byEmail || null,
-                updatedAt: now,
-              }
-            : x,
-        ),
-      )
-    } else {
-      setAllReservations((prev) =>
-        prev.map((x) =>
-          x.id === r.id
-            ? {
-                ...x,
-                deletedAt: now,
-                deletedByEmail: byEmail || null,
-                updatedAt: now,
-              }
-            : x,
-        ),
-      )
-    }
+      const patchBody = { graphItemId: r.graphItemId, _patch: true, fields }
 
-    appendAudit({
-      tipo: 'cancelamento',
-      origem: isCar ? 'carro' : 'salas',
-      reservaId: r.id,
-      titulo: r.titulo,
-      sala: r.sala,
-      destino: r.destino || null,
-      date: r.date,
-      dateFim: r.dateFim || null,
-      horaInicio: r.horaInicio,
-      horaFim: r.horaFim,
-      solicitante: r.solicitante,
-      motivo: reason,
-      motivoDetalhe: reasonDetail || '',
-      canceladoPor: byLabel,
-      canceladoPorEmail: byEmail || null,
-      deletedAt: now,
-      deletedByEmail: byEmail || null,
-      at: now,
-    })
-    return true
-  }, [])
+      try {
+        if (isCar) {
+          if (!r.graphItemId) {
+            setAllCarReservations((prev) =>
+              prev.map((x) =>
+                x.id === r.id
+                  ? {
+                      ...x,
+                      deletedAt: now,
+                      deletedByEmail: byEmail || null,
+                      status: 'Cancelado',
+                      updatedAt: now,
+                    }
+                  : x,
+              ),
+            )
+          } else {
+            await updateCarReservation(patchBody)
+          }
+        } else if (!r.graphItemId) {
+          setAllReservations((prev) =>
+            prev.map((x) =>
+              x.id === r.id
+                ? {
+                    ...x,
+                    deletedAt: now,
+                    deletedByEmail: byEmail || null,
+                    status: 'Cancelado',
+                    updatedAt: now,
+                  }
+                : x,
+            ),
+          )
+        } else {
+          await updateReservation(patchBody)
+        }
+      } catch (e) {
+        throw e instanceof Error ? e : new Error(String(e))
+      }
+
+      appendAudit({
+        tipo: 'cancelamento',
+        origem: isCar ? 'carro' : 'salas',
+        reservaId: r.id,
+        titulo: r.titulo,
+        sala: r.sala,
+        destino: r.destino || null,
+        date: r.date,
+        dateFim: r.dateFim || null,
+        horaInicio: r.horaInicio,
+        horaFim: r.horaFim,
+        solicitante: r.solicitante,
+        motivo: reason,
+        motivoDetalhe: reasonDetail || '',
+        canceladoPor: byLabel,
+        canceladoPorEmail: byEmail || null,
+        deletedAt: now,
+        deletedByEmail: byEmail || null,
+        at: now,
+      })
+      return true
+    },
+    [updateReservation, updateCarReservation],
+  )
 
   const value = useMemo(
     () => ({

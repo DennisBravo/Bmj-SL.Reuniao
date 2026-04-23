@@ -169,7 +169,15 @@ function buildListFields(body) {
   if (body.emailSolicitante != null) fields.EmailSolicitante = String(body.emailSolicitante).trim()
   if (body.participantes != null) fields.ParticipantesTexto = String(body.participantes).trim()
   if (body.observacoes != null) fields.Observacao = String(body.observacoes).trim()
-  if (body.status != null) fields.Status = String(body.status).trim()
+  const statusFromBody = body.Status != null ? body.Status : body.status
+  if (statusFromBody != null) fields.Status = String(statusFromBody).trim()
+  const deletadoEm = body.DeletadoEm != null ? body.DeletadoEm : body.deletadoEm
+  if (deletadoEm != null) fields.DeletadoEm = String(deletadoEm).trim()
+  const deletadoPor =
+    body.DeletadoPorEmail != null ? body.DeletadoPorEmail : body.deletadoPorEmail
+  if (deletadoPor != null && String(deletadoPor).trim() !== '') {
+    fields.DeletadoPorEmail = String(deletadoPor).trim()
+  }
   if (!body._patch) fields.CriadoVia = 'App Web'
 
   // Colunas opcionais na lista SharePoint: TipoReuniao (Escolha: Interna | Externa), NomeCliente (Texto).

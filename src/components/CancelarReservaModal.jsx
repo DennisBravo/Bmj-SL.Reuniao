@@ -20,18 +20,27 @@ export default function CancelarReservaModal({ reservation, onClose, onConfirm }
   const isCar =
     reservation.tipoReserva === 'carro' || reservation.sala === CARRO_CONFLICT_SALA_KEY
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     const label = MOTIVOS.find((m) => m.value === motivo)?.label || motivo
     const reasonDetail = motivo === 'outro' ? detalhe.trim() : detalhe.trim()
-    const ok = onConfirm({
-      reason: label,
-      reasonDetail,
-      cancelledBy: quem.trim() || 'Recepção',
-      cancelledByEmail: emailCancelador.trim(),
-    })
-    if (ok === false) {
-      window.alert(PERMISSAO_NEGADA_MSG)
+    let result
+    try {
+      result = onConfirm({
+        reason: label,
+        reasonDetail,
+        cancelledBy: quem.trim() || 'Recepção',
+        cancelledByEmail: emailCancelador.trim(),
+      })
+      if (result && typeof result.then === 'function') {
+        result = await result
+      }
+      if (result === false) {
+        window.alert(PERMISSAO_NEGADA_MSG)
+        return
+      }
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Não foi possível cancelar.')
       return
     }
     onClose()
