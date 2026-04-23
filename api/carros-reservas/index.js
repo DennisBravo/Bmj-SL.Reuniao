@@ -141,6 +141,19 @@ function emailFromFields(f) {
   return typeof v === 'string' ? v : String(v ?? '')
 }
 
+/** Remove nome interno legado da lista Salas; CarrosReserva_BMJ usa a coluna `HoraFim`. */
+function normalizeCarFieldsForGraph(fields) {
+  if (!fields || typeof fields !== 'object') return fields
+  const o = { ...fields }
+  if (Object.prototype.hasOwnProperty.call(o, 'Hor_x00e1_riodeFim')) {
+    if (o.HoraFim == null || o.HoraFim === '') {
+      o.HoraFim = o['Hor_x00e1_riodeFim']
+    }
+    delete o['Hor_x00e1_riodeFim']
+  }
+  return o
+}
+
 /**
  * Ajuste os nomes internos às colunas reais da lista CarrosReserva_BMJ no SharePoint.
  * Campos esperados: Title, DataReserva, HoraInicio, HoraFim, Destino, Motivo,
@@ -148,7 +161,7 @@ function emailFromFields(f) {
  */
 function buildCarFields(body) {
   if (!body || typeof body !== 'object') return {}
-  if (body.fields && typeof body.fields === 'object') return { ...body.fields }
+  if (body.fields && typeof body.fields === 'object') return normalizeCarFieldsForGraph(body.fields)
 
   const fields = {
     Title:
