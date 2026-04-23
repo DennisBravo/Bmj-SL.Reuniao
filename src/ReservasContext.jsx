@@ -104,13 +104,21 @@ function graphListItemToCarReservation(item) {
 /** Preserva soft-delete feito só no cliente após um GET ao servidor */
 function mergeLocalCancellations(prevList, serverList) {
   const cancelledById = new Map()
+  const cancelledByGraphId = new Map()
   for (const r of prevList) {
     if (r.deletedAt) {
-      cancelledById.set(r.id, { deletedAt: r.deletedAt, deletedByEmail: r.deletedByEmail })
+      const meta = { deletedAt: r.deletedAt, deletedByEmail: r.deletedByEmail }
+      cancelledById.set(r.id, meta)
+      if (r.graphItemId != null && String(r.graphItemId).trim() !== '') {
+        cancelledByGraphId.set(String(r.graphItemId).trim(), meta)
+      }
     }
   }
   return serverList.map((r) => {
-    const c = cancelledById.get(r.id)
+    let c = cancelledById.get(r.id)
+    if (!c && r.graphItemId != null) {
+      c = cancelledByGraphId.get(String(r.graphItemId).trim())
+    }
     if (!c) return r
     return { ...r, deletedAt: c.deletedAt, deletedByEmail: c.deletedByEmail }
   })
@@ -401,6 +409,17 @@ export function ReservasProvider({ children }) {
 
       const patchBody = { graphItemId: r.graphItemId, _patch: true, fields }
 
+      const matchesSalas = (x) =>
+        x &&
+        (x.id === r.id ||
+          (r.graphItemId != null &&
+            String(x.graphItemId || '').trim() === String(r.graphItemId).trim()))
+      const matchesCarros = (x) =>
+        x &&
+        (x.id === r.id ||
+          (r.graphItemId != null &&
+            String(x.graphItemId || '').trim() === String(r.graphItemId).trim()))
+
       try {
         if (isCar) {
           if (!r.graphItemId) {
@@ -418,7 +437,37 @@ export function ReservasProvider({ children }) {
               ),
             )
           } else {
-            await updateCarReservation(patchBody)
+            setAllCarReservations((prev) =>
+              prev.map((x) =>
+                matchesCarros(x)
+                  ? {
+                      ...x,
+                      deletedAt: now,
+                      deletedByEmail: byEmail || null,
+                      status: 'Cancelado',
+                      updatedAt: now,
+                    }
+                  : x,
+              ),
+            )
+            try {
+              await updateCarReservation(patchBody)
+            } catch (e) {
+              setAllCarReservations((prev) =>
+                prev.map((x) =>
+                  matchesCarros(x)
+                    ? {
+                        ...x,
+                        deletedAt: r.deletedAt ?? null,
+                        deletedByEmail: r.deletedByEmail ?? null,
+                        status: r.status || 'ativo',
+                        updatedAt: r.updatedAt ?? x.updatedAt,
+                      }
+                    : x,
+                ),
+              )
+              throw e instanceof Error ? e : new Error(String(e))
+            }
           }
         } else if (!r.graphItemId) {
           setAllReservations((prev) =>
@@ -435,7 +484,37 @@ export function ReservasProvider({ children }) {
             ),
           )
         } else {
-          await updateReservation(patchBody)
+          setAllReservations((prev) =>
+            prev.map((x) =>
+              matchesSalas(x)
+                ? {
+                    ...x,
+                    deletedAt: now,
+                    deletedByEmail: byEmail || null,
+                    status: 'Cancelado',
+                    updatedAt: now,
+                  }
+                : x,
+            ),
+          )
+          try {
+            await updateReservation(patchBody)
+          } catch (e) {
+            setAllReservations((prev) =>
+              prev.map((x) =>
+                matchesSalas(x)
+                  ? {
+                      ...x,
+                      deletedAt: r.deletedAt ?? null,
+                      deletedByEmail: r.deletedByEmail ?? null,
+                      status: r.status || 'ativo',
+                      updatedAt: r.updatedAt ?? x.updatedAt,
+                    }
+                  : x,
+              ),
+            )
+            throw e instanceof Error ? e : new Error(String(e))
+          }
         }
       } catch (e) {
         throw e instanceof Error ? e : new Error(String(e))

@@ -94,6 +94,30 @@ async function graphPatchJson(url, token, payload) {
   return data
 }
 
+async function graphPatchListItemFields(fieldsUrl, token, fields) {
+  const res = await fetch(fieldsUrl, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'If-Match': '*',
+    },
+    body: JSON.stringify(fields),
+  })
+  const text = await res.text()
+  let data = {}
+  try {
+    data = text ? JSON.parse(text) : {}
+  } catch {
+    data = {}
+  }
+  if (!res.ok) {
+    const msg = data.error?.message || JSON.stringify(data.error || data)
+    throw new Error(`${res.status} ${msg}`)
+  }
+  return data
+}
+
 async function resolveSiteId(token, siteUrl) {
   const resource = siteResourceFromUrl(siteUrl)
   const url = `${GRAPH_BASE}/sites/${encodeURIComponent(resource)}`
@@ -250,17 +274,17 @@ module.exports = async function (context, req) {
         return
       }
       const patchBody = { ...body, _patch: true }
-      const fields = buildCarFields(patchBody)
-      const url = `${GRAPH_BASE}/sites/${encodeURIComponent(siteId)}/lists/${encodeURIComponent(
+      const fields = normalizeCarFieldsForGraph(buildCarFields(patchBody))
+      const itemBase = `${GRAPH_BASE}/sites/${encodeURIComponent(siteId)}/lists/${encodeURIComponent(
         listId,
       )}/items/${encodeURIComponent(graphItemId)}`
-      const updated = await graphPatchJson(url, token, { fields })
+      const updatedFields = await graphPatchListItemFields(`${itemBase}/fields`, token, fields)
       jsonRes(context, 200, {
-        id: updated.id,
-        eTag: updated.eTag,
-        createdDateTime: updated.createdDateTime,
-        lastModifiedDateTime: updated.lastModifiedDateTime,
-        fields: updated.fields || {},
+        id: graphItemId,
+        eTag: '',
+        createdDateTime: null,
+        lastModifiedDateTime: new Date().toISOString(),
+        fields: updatedFields && typeof updatedFields === 'object' ? updatedFields : {},
       })
       return
     }
