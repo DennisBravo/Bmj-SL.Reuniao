@@ -28,7 +28,7 @@ function rowStatusLabel(r) {
   return 'Ativa'
 }
 
-export default function RecepcaoRelatorioMovimentoCarro() {
+export default function RecepcaoRelatorioMovimentoCarro({ embedded = false }) {
   const {
     allCarReservations,
     carLoading,
@@ -160,9 +160,8 @@ export default function RecepcaoRelatorioMovimentoCarro() {
     w.document.close()
   }
 
-  return (
-    <div className="recepcao-painel-wrap">
-      <div className="painel">
+  const painel = (
+    <div className="painel">
         <div className="painel__toolbar">
           <span className="painel__toolbar-label">Período</span>
           <div className="painel__segmented" role="tablist" aria-label="Período do relatório">
@@ -320,7 +319,9 @@ export default function RecepcaoRelatorioMovimentoCarro() {
             </table>
           </div>
         </section>
-      </div>
     </div>
   )
+
+  if (embedded) return painel
+  return <div className="recepcao-painel-wrap">{painel}</div>
 }

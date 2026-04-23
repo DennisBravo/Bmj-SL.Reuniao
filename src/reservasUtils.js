@@ -501,6 +501,15 @@ const CAP_QTD_SAO_PAULO_RAW = Object.freeze({
   'Aquário 02': '02',
 })
 
+/** Salas São Paulo para recepção/relatórios sem catálogo live (alinhado a `CAP_QTD_SAO_PAULO_RAW`). */
+export const SALAS_RECEPCAO_SAO_PAULO = Object.freeze([
+  'Sala Principal',
+  'Reunião 01',
+  'Reunião 02',
+  'Aquário 01',
+  'Aquário 02',
+])
+
 function buildCapLookup(raw) {
   const m = new Map()
   for (const [label, value] of Object.entries(raw)) {
@@ -656,5 +665,18 @@ export function filterReservasPorUnidade(reservations, catalogSalas, unidadeSpLa
     const u = String(r.unidade || '').trim()
     if (!u) return true
     return u === unidadeSpLabel
+  })
+}
+
+/** Recepção (sem catálogo): reservas de salas pelo texto SharePoint «Unidade». */
+export function filterReservasSalasPorUnidadeRecepcao(reservations, unidadeLabel) {
+  const label = String(unidadeLabel || '').trim()
+  if (!label) return reservations || []
+  return (reservations || []).filter((r) => {
+    if (!r) return false
+    const u = String(r.unidade || '').trim()
+    if (label === 'Brasília') return !u || u === 'Brasília'
+    if (label === 'São Paulo') return u === 'São Paulo'
+    return false
   })
 }

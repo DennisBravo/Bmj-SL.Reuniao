@@ -7,8 +7,6 @@ const NAV_ITEMS = [
   { to: 'relatorios', label: 'Relatórios' },
   { to: 'movimento-carro', label: 'Movimento do carro' },
   { to: 'manuais', label: 'Manuais das salas' },
-  { to: 'suporte', label: 'Informações e suporte da sala' },
-  { to: 'acesso', label: 'Controle de acesso (login)' },
 ]
 
 export default function RecepcaoLayout() {

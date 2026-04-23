@@ -2663,6 +2663,10 @@ a.app__rececao-menu-item {
   box-sizing: border-box;
 }
 
+.recepcao-relatorios__unit {
+  margin-bottom: 20px;
+}
+
 .recepcao-page {
   padding: 24px var(--page-pad-x, 28px) 40px;
   max-width: var(--page-max, 900px);
@@ -2700,6 +2704,22 @@ a.app__rececao-menu-item {
   border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--surface);
+}
+
+.recepcao-page__filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 20px 28px;
+  margin-bottom: 16px;
+}
+
+.recepcao-page__filters-row .recepcao-page__field {
+  margin-bottom: 0;
+}
+
+.recepcao-page__filters-row .unidade-selector {
+  margin-bottom: 0;
 }
 
 .recepcao-page__field {

@@ -38,28 +38,6 @@ createRoot(document.getElementById('root')).render(
                     </RecepcaoPlaceholder>
                   }
                 />
-                <Route
-                  path="suporte"
-                  element={
-                    <RecepcaoPlaceholder title="Informações e suporte da sala">
-                      <p>
-                        Ficha técnica por sala (capacidade, equipamentos, contactos): previsto na fase
-                        2.
-                      </p>
-                    </RecepcaoPlaceholder>
-                  }
-                />
-                <Route
-                  path="acesso"
-                  element={
-                    <RecepcaoPlaceholder title="Controle de acesso (login)">
-                      <p>
-                        Controle de acesso (Microsoft Entra ID / perfis Recepção e Admin): previsto na
-                        fase 2.
-                      </p>
-                    </RecepcaoPlaceholder>
-                  }
-                />
               </Route>
               <Route path="*" element={<App />} />
             </Routes>

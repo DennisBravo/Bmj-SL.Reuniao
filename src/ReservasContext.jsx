@@ -348,24 +348,43 @@ export function ReservasProvider({ children }) {
     const byEmail = normalizeEmail(cancelledByEmail || '')
     const byLabel = (cancelledBy || '').trim() || 'Recepção'
 
-    setAllReservations((prev) =>
-      prev.map((x) =>
-        x.id === r.id
-          ? {
-              ...x,
-              deletedAt: now,
-              deletedByEmail: byEmail || null,
-              updatedAt: now,
-            }
-          : x,
-      ),
-    )
+    const isCar = r && r.tipoReserva === 'carro'
+
+    if (isCar) {
+      setAllCarReservations((prev) =>
+        prev.map((x) =>
+          x.id === r.id
+            ? {
+                ...x,
+                deletedAt: now,
+                deletedByEmail: byEmail || null,
+                updatedAt: now,
+              }
+            : x,
+        ),
+      )
+    } else {
+      setAllReservations((prev) =>
+        prev.map((x) =>
+          x.id === r.id
+            ? {
+                ...x,
+                deletedAt: now,
+                deletedByEmail: byEmail || null,
+                updatedAt: now,
+              }
+            : x,
+        ),
+      )
+    }
 
     appendAudit({
       tipo: 'cancelamento',
+      origem: isCar ? 'carro' : 'salas',
       reservaId: r.id,
       titulo: r.titulo,
       sala: r.sala,
+      destino: r.destino || null,
       date: r.date,
       dateFim: r.dateFim || null,
       horaInicio: r.horaInicio,

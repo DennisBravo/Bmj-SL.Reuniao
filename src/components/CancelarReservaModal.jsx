@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { getCurrentUserEmail, PERMISSAO_NEGADA_MSG } from '../envConfig.js'
+import { CARRO_CONFLICT_SALA_KEY } from '../reservasUtils'
 
 const MOTIVOS = [
   { value: 'reuniao_cancelada', label: 'Reunião cancelada' },
@@ -15,6 +16,9 @@ export default function CancelarReservaModal({ reservation, onClose, onConfirm }
   const [emailCancelador, setEmailCancelador] = useState(() => getCurrentUserEmail() || '')
 
   if (!reservation) return null
+
+  const isCar =
+    reservation.tipoReserva === 'carro' || reservation.sala === CARRO_CONFLICT_SALA_KEY
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -43,21 +47,44 @@ export default function CancelarReservaModal({ reservation, onClose, onConfirm }
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id="cancel-reserva-title" className="app__modal-title">
-          Cancelar reserva
+          {isCar ? 'Cancelar reserva de carro' : 'Cancelar reserva'}
         </h2>
         <p className="app__modal-hint">
           <strong>{reservation.titulo}</strong>
           <br />
-          {reservation.sala} · {reservation.horaInicio} – {reservation.horaFim}
-          {reservation.dateFim && reservation.dateFim !== reservation.date ? (
+          {isCar ? (
             <>
+              {reservation.veiculo ? `${reservation.veiculo} · ` : 'Carro · '}
+              {reservation.horaInicio} – {reservation.horaFim}
+              {reservation.destino?.trim() ? (
+                <>
+                  <br />
+                  Destino: {reservation.destino.trim()}
+                </>
+              ) : null}
+              {reservation.motivo?.trim() ? (
+                <>
+                  <br />
+                  Motivo: {reservation.motivo.trim()}
+                </>
+              ) : null}
               <br />
-              Período: {reservation.date} → {reservation.dateFim}
+              Data: {reservation.date}
             </>
           ) : (
             <>
-              <br />
-              Data: {reservation.date}
+              {reservation.sala} · {reservation.horaInicio} – {reservation.horaFim}
+              {reservation.dateFim && reservation.dateFim !== reservation.date ? (
+                <>
+                  <br />
+                  Período: {reservation.date} → {reservation.dateFim}
+                </>
+              ) : (
+                <>
+                  <br />
+                  Data: {reservation.date}
+                </>
+              )}
             </>
           )}
         </p>

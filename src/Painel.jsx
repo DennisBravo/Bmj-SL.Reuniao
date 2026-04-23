@@ -28,7 +28,12 @@ function escapeHtml(s) {
     .replace(/"/g, '&quot;')
 }
 
-export default function Painel({ reservations }) {
+export default function Painel({ reservations, salasCatalog }) {
+  const salasList = useMemo(
+    () => (Array.isArray(salasCatalog) && salasCatalog.length > 0 ? salasCatalog : SALAS),
+    [salasCatalog],
+  )
+
   const [period, setPeriod] = useState('week')
   const [filterSala, setFilterSala] = useState('')
   const [filterSolicitante, setFilterSolicitante] = useState('')
@@ -69,29 +74,29 @@ export default function Painel({ reservations }) {
   const numDaysInPeriod = daysInclusive(periodBounds.start, periodBounds.end)
 
   const taxaOcupacao = useMemo(() => {
-    const capTotal = SALAS.length * numDaysInPeriod * windowMinutes
+    const capTotal = salasList.length * numDaysInPeriod * windowMinutes
     let used = 0
     for (const r of inPeriod) {
       used += reservationMinutesInPeriod(r, periodBounds.start, periodBounds.end)
     }
     if (capTotal <= 0) return 0
     return Math.min(100, Math.round((used / capTotal) * 1000) / 10)
-  }, [inPeriod, numDaysInPeriod, windowMinutes, periodBounds])
+  }, [inPeriod, numDaysInPeriod, windowMinutes, periodBounds, salasList.length])
 
   const ocupacaoPorSala = useMemo(() => {
     const maxPerRoom = numDaysInPeriod * windowMinutes
-    const used = Object.fromEntries(SALAS.map((s) => [s, 0]))
+    const used = Object.fromEntries(salasList.map((s) => [s, 0]))
     for (const r of inPeriod) {
       if (used[r.sala] !== undefined) {
         used[r.sala] += reservationMinutesInPeriod(r, periodBounds.start, periodBounds.end)
       }
     }
-    return SALAS.map((sala) => ({
+    return salasList.map((sala) => ({
       sala,
       minutes: used[sala],
       pct: maxPerRoom > 0 ? Math.min(100, (used[sala] / maxPerRoom) * 100) : 0,
     }))
-  }, [inPeriod, numDaysInPeriod, windowMinutes, periodBounds])
+  }, [inPeriod, numDaysInPeriod, windowMinutes, periodBounds, salasList])
 
   const tableRows = useMemo(() => {
     let list = inPeriod
@@ -224,7 +229,7 @@ export default function Painel({ reservations }) {
           <h3 className="stat-card__label">Salas ocupadas agora</h3>
           <p className="stat-card__value">
             {salasOcupadasAgora}
-            <span className="stat-card__suffix"> / {SALAS.length}</span>
+            <span className="stat-card__suffix"> / {salasList.length}</span>
           </p>
           <p className="stat-card__sub">Com reunião em andamento neste instante</p>
         </article>
@@ -232,7 +237,7 @@ export default function Painel({ reservations }) {
           <h3 className="stat-card__label">Taxa de ocupação</h3>
           <p className="stat-card__value">{taxaOcupacao}%</p>
           <p className="stat-card__sub">
-            Minutos reservados ÷ capacidade ({SALAS.length} salas × {numDaysInPeriod}{' '}
+            Minutos reservados ÷ capacidade ({salasList.length} salas × {numDaysInPeriod}{' '}
             {numDaysInPeriod === 1 ? 'dia' : 'dias'} × {Math.round(windowMinutes / 60)}h/dia)
           </p>
         </article>
@@ -283,7 +288,7 @@ export default function Painel({ reservations }) {
               onChange={(e) => setFilterSala(e.target.value)}
             >
               <option value="">Todas</option>
-              {SALAS.map((s) => (
+              {salasList.map((s) => (
                 <option key={s} value={s}>
                   {s}
                 </option>
