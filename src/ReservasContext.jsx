@@ -401,24 +401,12 @@ export function ReservasProvider({ children }) {
       const byLabel = (cancelledBy || '').trim() || 'Recepção'
       const isCar = r && r.tipoReserva === 'carro'
 
-      const fields = {
-        Status: 'Cancelado',
-        DeletadoEm: now,
+      /** PATCH mínimo no SharePoint: só `Status` (item permanece na lista). `deletedAt` vem do GET após reload. */
+      const patchBody = {
+        graphItemId: r.graphItemId,
+        _patch: true,
+        fields: { Status: 'Cancelado' },
       }
-      if (byEmail) fields.DeletadoPorEmail = byEmail
-
-      const patchBody = { graphItemId: r.graphItemId, _patch: true, fields }
-
-      const matchesSalas = (x) =>
-        x &&
-        (x.id === r.id ||
-          (r.graphItemId != null &&
-            String(x.graphItemId || '').trim() === String(r.graphItemId).trim()))
-      const matchesCarros = (x) =>
-        x &&
-        (x.id === r.id ||
-          (r.graphItemId != null &&
-            String(x.graphItemId || '').trim() === String(r.graphItemId).trim()))
 
       try {
         if (isCar) {
@@ -437,37 +425,7 @@ export function ReservasProvider({ children }) {
               ),
             )
           } else {
-            setAllCarReservations((prev) =>
-              prev.map((x) =>
-                matchesCarros(x)
-                  ? {
-                      ...x,
-                      deletedAt: now,
-                      deletedByEmail: byEmail || null,
-                      status: 'Cancelado',
-                      updatedAt: now,
-                    }
-                  : x,
-              ),
-            )
-            try {
-              await updateCarReservation(patchBody)
-            } catch (e) {
-              setAllCarReservations((prev) =>
-                prev.map((x) =>
-                  matchesCarros(x)
-                    ? {
-                        ...x,
-                        deletedAt: r.deletedAt ?? null,
-                        deletedByEmail: r.deletedByEmail ?? null,
-                        status: r.status || 'ativo',
-                        updatedAt: r.updatedAt ?? x.updatedAt,
-                      }
-                    : x,
-                ),
-              )
-              throw e instanceof Error ? e : new Error(String(e))
-            }
+            await updateCarReservation(patchBody)
           }
         } else if (!r.graphItemId) {
           setAllReservations((prev) =>
@@ -484,37 +442,7 @@ export function ReservasProvider({ children }) {
             ),
           )
         } else {
-          setAllReservations((prev) =>
-            prev.map((x) =>
-              matchesSalas(x)
-                ? {
-                    ...x,
-                    deletedAt: now,
-                    deletedByEmail: byEmail || null,
-                    status: 'Cancelado',
-                    updatedAt: now,
-                  }
-                : x,
-            ),
-          )
-          try {
-            await updateReservation(patchBody)
-          } catch (e) {
-            setAllReservations((prev) =>
-              prev.map((x) =>
-                matchesSalas(x)
-                  ? {
-                      ...x,
-                      deletedAt: r.deletedAt ?? null,
-                      deletedByEmail: r.deletedByEmail ?? null,
-                      status: r.status || 'ativo',
-                      updatedAt: r.updatedAt ?? x.updatedAt,
-                    }
-                  : x,
-              ),
-            )
-            throw e instanceof Error ? e : new Error(String(e))
-          }
+          await updateReservation(patchBody)
         }
       } catch (e) {
         throw e instanceof Error ? e : new Error(String(e))

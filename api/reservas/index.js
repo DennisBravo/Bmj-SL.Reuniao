@@ -387,6 +387,11 @@ module.exports = async function (context, req) {
       }
       const patchBody = { ...body, _patch: true }
       const fields = buildListFields(patchBody)
+      /* Diagnóstico deploy: confirmar corpo do PATCH (remover após validar SharePoint). */
+      context.log(
+        '[reservas PATCH] diagnostic',
+        JSON.stringify({ graphItemId, fieldKeys: Object.keys(fields || {}), fields }),
+      )
       const itemBase = `${GRAPH_BASE}/sites/${encodeURIComponent(siteId)}/lists/${encodeURIComponent(
         listId,
       )}/items/${encodeURIComponent(graphItemId)}`
