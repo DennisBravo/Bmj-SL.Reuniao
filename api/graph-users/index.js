@@ -48,17 +48,22 @@ function odataStringLiteral(s) {
   return `'${String(s).replace(/'/g, "''")}'`
 }
 
-/** Colaboradores internos (exclui convidados explícitos). Requer permissão de aplicação User.Read.All + consentimento admin. */
-function buildUsersFilter(qLower) {
-  const lit = odataStringLiteral(qLower)
+/**
+ * Filtro OData compatível com GET /users no Graph (app-only).
+ * Evita `tolower()` / filtros complexos — devolvem 400 "Unsupported Query" em muitos tenants.
+ * Requer permissão de aplicação User.Read.All (ou equivalente) + consentimento admin.
+ */
+function buildUsersFilter(qRaw) {
+  const lit = odataStringLiteral(qRaw.trim())
   const typeClause = `(userType ne 'Guest')`
-  const nameOrUpn = `(startswith(tolower(displayName),${lit}) or startswith(tolower(userPrincipalName),${lit}))`
-  const mailClause = `(mail ne null and startswith(tolower(mail),${lit}))`
-  return `${typeClause} and (${nameOrUpn} or ${mailClause})`
+  const byName = `startswith(displayName,${lit})`
+  const byUpn = `startswith(userPrincipalName,${lit})`
+  const byMail = `(mail ne null and startswith(mail,${lit}))`
+  return `${typeClause} and (${byName} or ${byUpn} or ${byMail})`
 }
 
 async function graphGetUsersSearch(token, q) {
-  const qTrim = String(q).trim().toLowerCase()
+  const qTrim = String(q).trim()
   if (qTrim.length < 2) return []
 
   const filter = buildUsersFilter(qTrim)
@@ -66,7 +71,6 @@ async function graphGetUsersSearch(token, q) {
     $filter: filter,
     $select: 'displayName,mail,userPrincipalName',
     $top: '15',
-    $orderby: 'displayName',
   })
   const url = `${GRAPH_BASE}/users?${params.toString()}`
   const res = await fetch(url, {
