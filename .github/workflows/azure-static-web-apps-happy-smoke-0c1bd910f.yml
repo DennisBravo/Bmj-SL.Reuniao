@@ -28,6 +28,11 @@ jobs:
         run: npm install
       - name: Build app
         run: npm run build
+      - name: Confirm frontend build output
+        run: |
+          test -d dist || (echo "::error::pasta dist ausente apos npm run build" && exit 1)
+          test -f dist/index.html || (echo "::error::dist/index.html ausente" && exit 1)
+          ls -la dist | head -25
       - name: Install API dependencies
         working-directory: api
         run: npm install
