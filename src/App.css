@@ -2908,6 +2908,48 @@ a.app__rececao-menu-item {
   align-items: center;
 }
 
+.recepcao-canceladas__scroll {
+  overflow: auto;
+  max-height: min(70vh, 640px);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel-bg, #fff);
+}
+
+.recepcao-canceladas__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.recepcao-canceladas__table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+  background: var(--panel-bg, #fff);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 0 var(--border);
+}
+
+.recepcao-canceladas__table tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.06));
+  vertical-align: top;
+}
+
+.recepcao-canceladas__cell-muted {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+.recepcao-canceladas__obs {
+  display: inline;
+  color: var(--text-muted);
+}
+
 @media (max-width: 768px) {
   .recepcao-layout {
     flex-direction: column;

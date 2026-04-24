@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { to: 'mapa-semanal', label: 'Mapa semanal de reservas' },
   { to: 'movimento-carro', label: 'Movimento do carro' },
   { to: 'relatorios', label: 'Relatórios' },
+  { to: 'reservas-canceladas', label: 'Reservas canceladas' },
   { to: 'reservas-do-dia', label: 'Reserva do dia' },
 ].sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
 
