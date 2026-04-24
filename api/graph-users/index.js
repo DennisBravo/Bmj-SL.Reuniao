@@ -49,17 +49,12 @@ function odataStringLiteral(s) {
 }
 
 /**
- * Filtro OData compatível com GET /users no Graph (app-only).
- * Evita `tolower()` / filtros complexos — devolvem 400 "Unsupported Query" em muitos tenants.
- * Requer permissão de aplicação User.Read.All (ou equivalente) + consentimento admin.
+ * GET /v1.0/users?$filter=… (app-only). Sem userType / mail no filtro — o tenant rejeita
+ * filtros em `userType` e o pedido do produto é só displayName + userPrincipalName.
  */
 function buildUsersFilter(qRaw) {
   const lit = odataStringLiteral(qRaw.trim())
-  const typeClause = `(userType ne 'Guest')`
-  const byName = `startswith(displayName,${lit})`
-  const byUpn = `startswith(userPrincipalName,${lit})`
-  const byMail = `(mail ne null and startswith(mail,${lit}))`
-  return `${typeClause} and (${byName} or ${byUpn} or ${byMail})`
+  return `startswith(displayName,${lit}) or startswith(userPrincipalName,${lit})`
 }
 
 async function graphGetUsersSearch(token, q) {
@@ -70,7 +65,7 @@ async function graphGetUsersSearch(token, q) {
   const params = new URLSearchParams({
     $filter: filter,
     $select: 'displayName,mail,userPrincipalName',
-    $top: '15',
+    $top: '10',
   })
   const url = `${GRAPH_BASE}/users?${params.toString()}`
   const res = await fetch(url, {
