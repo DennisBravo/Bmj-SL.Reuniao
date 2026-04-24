@@ -101,6 +101,54 @@ function graphListItemToCarReservation(item) {
   }
 }
 
+/** Lista já mapeada (GET) → id Graph do item, por `ReservaID`/id da app ou pelo próprio id Graph. */
+function resolveGraphItemIdFromMappedList(r, list) {
+  const rid = String(r?.id ?? '').trim()
+  if (!rid || !Array.isArray(list)) return ''
+  for (const x of list) {
+    if (!x) continue
+    const gid = String(x.graphItemId ?? '').trim()
+    if (!gid) continue
+    const xid = String(x.id ?? '').trim()
+    if (xid === rid || gid === rid) return gid
+  }
+  return ''
+}
+
+async function fetchSalasMappedFromApi(apiUrl) {
+  const res = await fetch(apiUrl, { method: 'GET' })
+  const text = await res.text()
+  let data = {}
+  try {
+    data = text ? JSON.parse(text) : {}
+  } catch {
+    data = {}
+  }
+  if (!res.ok) {
+    const msg = data.detail || data.error || `Erro ${res.status} ao carregar reservas.`
+    throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg))
+  }
+  const items = Array.isArray(data.items) ? data.items : []
+  return items.map(graphListItemToReservation).filter(Boolean)
+}
+
+async function fetchCarsMappedFromApi(apiUrl) {
+  const res = await fetch(apiUrl, { method: 'GET' })
+  const text = await res.text()
+  let data = {}
+  try {
+    data = text ? JSON.parse(text) : {}
+  } catch {
+    data = {}
+  }
+  if (!res.ok) {
+    const msg = data.detail || data.error || `Erro ${res.status} ao carregar reservas de carro.`
+    throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg))
+  }
+  const items = Array.isArray(data.items) ? data.items : []
+  return items.map(graphListItemToCarReservation).filter(Boolean)
+}
+
 /** Preserva soft-delete feito só no cliente após um GET ao servidor */
 function mergeLocalCancellations(prevList, serverList) {
   const cancelledById = new Map()
@@ -401,16 +449,28 @@ export function ReservasProvider({ children }) {
       const byLabel = (cancelledBy || '').trim() || 'Recepção'
       const isCar = r && r.tipoReserva === 'carro'
 
+      let graphItemId = String(r.graphItemId ?? '').trim()
+      if (!graphItemId) {
+        try {
+          const list = isCar
+            ? await fetchCarsMappedFromApi(CARROS_API_URL)
+            : await fetchSalasMappedFromApi(RESERVAS_API_URL)
+          graphItemId = resolveGraphItemIdFromMappedList(r, list)
+        } catch {
+          graphItemId = ''
+        }
+      }
+
       /** PATCH mínimo no SharePoint: só `Status` (item permanece na lista). `deletedAt` vem do GET após reload. */
       const patchBody = {
-        graphItemId: r.graphItemId,
+        graphItemId: graphItemId || undefined,
         _patch: true,
         fields: { Status: 'Cancelado' },
       }
 
       try {
         if (isCar) {
-          if (!r.graphItemId) {
+          if (!graphItemId) {
             setAllCarReservations((prev) =>
               prev.map((x) =>
                 x.id === r.id
@@ -427,7 +487,7 @@ export function ReservasProvider({ children }) {
           } else {
             await updateCarReservation(patchBody)
           }
-        } else if (!r.graphItemId) {
+        } else if (!graphItemId) {
           setAllReservations((prev) =>
             prev.map((x) =>
               x.id === r.id
