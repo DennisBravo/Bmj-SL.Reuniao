@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   todayISO,
   timeToMinutes,
@@ -20,9 +20,12 @@ import {
   filterCarReservationsByUnidade,
   filterCarReservationsForUnitOnDate,
   carReservationSlotSummary,
+  reservationTipoReuniao,
 } from '../reservasUtils'
 import { M365EmailAutocomplete, M365ParticipantesAutocomplete } from './M365UserAutocompleteFields.jsx'
 import ReservaFormTextModal from './ReservaFormTextModal.jsx'
+import ReservaSlotDetalheModal from './ReservaSlotDetalheModal.jsx'
+import CancelarReservaModal from './CancelarReservaModal.jsx'
 import { getCurrentUserEmail, normalizeEmail } from '../envConfig.js'
 
 const defaultForm = () => ({
@@ -39,7 +42,15 @@ const defaultForm = () => ({
 
 const CAR_GRID_SLOTS = buildCarGridTimeSlots()
 
-export default function ReservaCarroView({ carReservations, addCarReservation, carLoading, carError, clearCarError }) {
+export default function ReservaCarroView({
+  carReservations,
+  addCarReservation,
+  carLoading,
+  carError,
+  clearCarError,
+  cancelReservationWithAudit,
+  identityEmails,
+}) {
   const [form, setForm] = useState(defaultForm)
   const [formError, setFormError] = useState('')
   const [fieldHighlight, setFieldHighlight] = useState({ participantes: false })
@@ -47,6 +58,51 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
   const [participantesModalOpen, setParticipantesModalOpen] = useState(false)
   const [participantesDraft, setParticipantesDraft] = useState('')
   const [participantesModalError, setParticipantesModalError] = useState('')
+  const [detalheReserva, setDetalheReserva] = useState(null)
+  const [cancelSlotTarget, setCancelSlotTarget] = useState(null)
+  const [slotHoverPreview, setSlotHoverPreview] = useState(null)
+  const hoverHideTimerRef = useRef(null)
+
+  const cancelHoverHide = useCallback(() => {
+    if (hoverHideTimerRef.current) {
+      window.clearTimeout(hoverHideTimerRef.current)
+      hoverHideTimerRef.current = null
+    }
+  }, [])
+
+  const scheduleHoverHide = useCallback(() => {
+    cancelHoverHide()
+    hoverHideTimerRef.current = window.setTimeout(() => {
+      setSlotHoverPreview(null)
+      hoverHideTimerRef.current = null
+    }, 240)
+  }, [cancelHoverHide])
+
+  useEffect(() => () => cancelHoverHide(), [cancelHoverHide])
+
+  useEffect(() => {
+    setSlotHoverPreview(null)
+    setDetalheReserva(null)
+    cancelHoverHide()
+  }, [form.date, cancelHoverHide])
+
+  function handleBusySlotEnter(e, res) {
+    cancelHoverHide()
+    const rect = e.currentTarget.getBoundingClientRect()
+    setSlotHoverPreview({
+      reservation: res,
+      left: rect.left + rect.width / 2,
+      top: rect.bottom + 6,
+    })
+  }
+
+  function handleBusySlotClick(e, res) {
+    e.preventDefault()
+    e.stopPropagation()
+    cancelHoverHide()
+    setSlotHoverPreview(null)
+    setDetalheReserva(res)
+  }
 
   const carReservasBrasilia = useMemo(
     () => filterCarReservationsByUnidade(carReservations, 'Brasília'),
@@ -264,7 +320,15 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
                           : `${CARRO_VEICULO_GRADE_LABEL}, ${slot.label}, disponível`
                         return (
                           <td key={slot.startMin}>
-                            <div className={slotClass} title={slotTitle} role="img" aria-label={aria} />
+                            <div
+                              className={slotClass}
+                              title={slotTitle}
+                              role="img"
+                              aria-label={aria}
+                              onMouseEnter={busy ? (e) => handleBusySlotEnter(e, res) : undefined}
+                              onMouseLeave={busy ? scheduleHoverHide : undefined}
+                              onClick={busy ? (e) => handleBusySlotClick(e, res) : undefined}
+                            />
                           </td>
                         )
                       })}
@@ -434,6 +498,64 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
               />
             </div>
           </ReservaFormTextModal>
+
+          {slotHoverPreview ? (
+            <div
+              className="slot-preview-popover"
+              role="tooltip"
+              style={{
+                left: Math.min(
+                  Math.max(slotHoverPreview.left, 136),
+                  (typeof window !== 'undefined' ? window.innerWidth : 800) - 136,
+                ),
+                top: slotHoverPreview.top,
+              }}
+              onMouseEnter={cancelHoverHide}
+              onMouseLeave={scheduleHoverHide}
+            >
+              <strong className="slot-preview-popover__title">
+                {slotHoverPreview.reservation.titulo || 'Reserva de carro'}
+              </strong>
+              <span className="slot-preview-popover__tipo">
+                {reservationTipoReuniao(slotHoverPreview.reservation) === 'externa'
+                  ? 'Reserva externa'
+                  : 'Reserva interna'}
+              </span>
+              <span className="slot-preview-popover__meta">
+                {slotHoverPreview.reservation.horaInicio}–{slotHoverPreview.reservation.horaFim} ·{' '}
+                {slotHoverPreview.reservation.veiculo || CARRO_VEICULO_LABEL}
+              </span>
+              {slotHoverPreview.reservation.solicitante ? (
+                <span className="slot-preview-popover__sub">{slotHoverPreview.reservation.solicitante}</span>
+              ) : null}
+              {slotHoverPreview.reservation.emailSolicitante ||
+              slotHoverPreview.reservation.createdByEmail ? (
+                <span className="slot-preview-popover__sub">
+                  {slotHoverPreview.reservation.emailSolicitante ||
+                    slotHoverPreview.reservation.createdByEmail}
+                </span>
+              ) : null}
+              <span className="slot-preview-popover__hint">Clique para ver tudo</span>
+            </div>
+          ) : null}
+          {detalheReserva ? (
+            <ReservaSlotDetalheModal
+              reservation={detalheReserva}
+              identityEmails={identityEmails}
+              onClose={() => setDetalheReserva(null)}
+              onRequestCancel={() => {
+                setCancelSlotTarget(detalheReserva)
+                setDetalheReserva(null)
+              }}
+            />
+          ) : null}
+          {cancelSlotTarget ? (
+            <CancelarReservaModal
+              reservation={cancelSlotTarget}
+              onClose={() => setCancelSlotTarget(null)}
+              onConfirm={(payload) => cancelReservationWithAudit(cancelSlotTarget, payload)}
+            />
+          ) : null}
         </section>
       </div>
     </div>

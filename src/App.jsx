@@ -604,6 +604,8 @@ export default function App() {
             carLoading={carLoading}
             carError={carError}
             clearCarError={clearCarError}
+            cancelReservationWithAudit={cancelReservationWithAudit}
+            identityEmails={identityEmails}
           />
         </div>
       ) : (
