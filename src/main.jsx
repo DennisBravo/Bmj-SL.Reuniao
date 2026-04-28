@@ -13,6 +13,7 @@ import RecepcaoRelatorios from './recepcao/RecepcaoRelatorios.jsx'
 import RecepcaoRelatorioMovimentoCarro from './recepcao/RecepcaoRelatorioMovimentoCarro.jsx'
 import RecepcaoPlaceholder from './recepcao/RecepcaoPlaceholder.jsx'
 import AppFooter from './components/AppFooter.jsx'
+import AdminGuard from './components/AdminGuard.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -21,7 +22,14 @@ createRoot(document.getElementById('root')).render(
         <div className="app-layout">
           <div className="app-layout__content">
             <Routes>
-              <Route path="/recepcao" element={<RecepcaoLayout />}>
+              <Route
+                path="/recepcao"
+                element={
+                  <AdminGuard>
+                    <RecepcaoLayout />
+                  </AdminGuard>
+                }
+              >
                 <Route index element={<Navigate to="mapa-semanal" replace />} />
                 <Route path="mapa-semanal" element={<MapaSemanal />} />
                 <Route path="reservas-do-dia" element={<RecepcaoReservasDoDia />} />
