@@ -636,6 +636,18 @@ function buildCapLookup(raw) {
 const CAP_LOOKUP_BRASILIA = buildCapLookup(CAP_QTD_BRASILIA_RAW)
 const CAP_LOOKUP_SAO_PAULO = buildCapLookup(CAP_QTD_SAO_PAULO_RAW)
 
+function capacidadeSaoPauloPorAlias(rawSalaNome) {
+  const k = normCapKey(rawSalaNome)
+  if (!k) return null
+  if (/\bprincipal\b/.test(k)) return '25'
+  if (/\breuniao\s*0?1\b/.test(k)) return '08'
+  if (/\breuniao\s*0?2\b/.test(k)) return '09'
+  if (/\baquario\s*0?1\b/.test(k)) return '01'
+  if (/\baquario\s*0?2\b/.test(k)) return '02'
+  if (/\bflat\b/.test(k)) return '02'
+  return null
+}
+
 /** Reservas de carro ativas filtradas pela coluna SharePoint `Unidade`. Sem unidade: assume Brasília. */
 export function filterCarReservationsByUnidade(carList, unidadeLabel) {
   const target = normCapKey(unidadeLabel)
@@ -662,6 +674,12 @@ export function capacidadeQtdPessoasExibicao(salaNome, appUnidadeId) {
   const tries = [normCapKey(salaNome), normCapKey(salaNomeGradeExibicao(salaNome))]
   for (const k of tries) {
     if (k && map.has(k)) return map.get(k)
+  }
+  if (appUnidadeId === APP_UNIDADE.SAO_PAULO) {
+    for (const t of tries) {
+      const v = capacidadeSaoPauloPorAlias(t)
+      if (v) return v
+    }
   }
   return '—'
 }
