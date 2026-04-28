@@ -604,8 +604,9 @@ const CAP_QTD_SAO_PAULO_RAW = Object.freeze({
   Principal: '25',
   'Reunião 01': '08',
   'Reunião 02': '09',
-  'Aquário 01': '02',
+  'Aquário 01': '01',
   'Aquário 02': '02',
+  Flat: '02',
 })
 
 /** Salas São Paulo para recepção/relatórios sem catálogo live (alinhado a `CAP_QTD_SAO_PAULO_RAW`). */
@@ -615,6 +616,7 @@ export const SALAS_RECEPCAO_SAO_PAULO = Object.freeze([
   'Reunião 02',
   'Aquário 01',
   'Aquário 02',
+  'Flat',
 ])
 
 function buildCapLookup(raw) {
