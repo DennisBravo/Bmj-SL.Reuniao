@@ -4,6 +4,9 @@ import {
   timeToMinutes,
   minutesToTime,
   isValidEmail,
+  validateParticipantesEmailsOnly,
+  participantesResumoLabel,
+  splitParticipantesEmails,
   findReservationConflictRange,
   findReservationForSlot,
   CARRO_CONFLICT_SALA_KEY,
@@ -18,7 +21,8 @@ import {
   filterCarReservationsForUnitOnDate,
   carReservationSlotSummary,
 } from '../reservasUtils'
-import { M365EmailAutocomplete } from './M365UserAutocompleteFields.jsx'
+import { M365EmailAutocomplete, M365ParticipantesAutocomplete } from './M365UserAutocompleteFields.jsx'
+import ReservaFormTextModal from './ReservaFormTextModal.jsx'
 import { getCurrentUserEmail, normalizeEmail } from '../envConfig.js'
 
 const defaultForm = () => ({
@@ -29,6 +33,7 @@ const defaultForm = () => ({
   motivo: '',
   solicitante: '',
   emailSolicitante: '',
+  participantes: '',
   observacoes: '',
 })
 
@@ -37,7 +42,11 @@ const CAR_GRID_SLOTS = buildCarGridTimeSlots()
 export default function ReservaCarroView({ carReservations, addCarReservation, carLoading, carError, clearCarError }) {
   const [form, setForm] = useState(defaultForm)
   const [formError, setFormError] = useState('')
+  const [fieldHighlight, setFieldHighlight] = useState({ participantes: false })
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [participantesModalOpen, setParticipantesModalOpen] = useState(false)
+  const [participantesDraft, setParticipantesDraft] = useState('')
+  const [participantesModalError, setParticipantesModalError] = useState('')
 
   const carReservasBrasilia = useMemo(
     () => filterCarReservationsByUnidade(carReservations, 'Brasília'),
@@ -52,12 +61,36 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
   function updateField(key, v) {
     setForm((f) => ({ ...f, [key]: v }))
     setFormError('')
+    setFieldHighlight((h) => ({ ...h, ...(key === 'participantes' ? { participantes: false } : {}) }))
     clearCarError()
+  }
+
+  function openParticipantesModal() {
+    setParticipantesDraft(form.participantes)
+    setParticipantesModalError('')
+    setParticipantesModalOpen(true)
+  }
+
+  function cancelParticipantesModal() {
+    setParticipantesModalOpen(false)
+    setParticipantesModalError('')
+  }
+
+  function confirmParticipantesModal() {
+    const check = validateParticipantesEmailsOnly(participantesDraft)
+    if (!check.ok) {
+      setParticipantesModalError(check.error)
+      return
+    }
+    updateField('participantes', participantesDraft)
+    setParticipantesModalOpen(false)
+    setParticipantesModalError('')
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
     setFormError('')
+    setFieldHighlight((h) => ({ ...h, participantes: false }))
     setSaveSuccess(false)
     clearCarError()
 
@@ -66,6 +99,16 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
     const solicitante = form.solicitante.trim()
     const emailSolicitante = form.emailSolicitante.trim()
     const observacoes = form.observacoes.trim()
+    const partCheck = validateParticipantesEmailsOnly(form.participantes)
+    let participantesNorm = ''
+    if (partCheck.ok) {
+      participantesNorm = partCheck.emails.join('\n')
+    } else {
+      // Sinaliza visualmente, mas NÃO bloqueia o envio.
+      setFormError(partCheck.error)
+      setFieldHighlight((h) => ({ ...h, participantes: true }))
+      participantesNorm = splitParticipantesEmails(form.participantes).join('\n')
+    }
 
     if (!destino) {
       setFormError('Informe o destino.')
@@ -133,6 +176,7 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
       solicitante,
       emailSolicitante,
       observacoes,
+      participantes: participantesNorm,
       veiculo: CARRO_VEICULO_LABEL,
       motorista: CARRO_MOTORISTA_LABEL,
       unidade: 'Brasília',
@@ -341,12 +385,55 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
                 </div>
               </div>
             </div>
+            <div
+              className={`form__tipo-participantes-cell form__tipo-participantes-cell--part${fieldHighlight.participantes ? ' form__tipo-participantes-cell--error' : ''}`}
+            >
+              <div className={`form__panel form__panel--stack${fieldHighlight.participantes ? ' form__panel--error' : ''}`}>
+                <div className="form__panel-head">
+                  <span className="form__panel__legend">Participantes (só e-mails)</span>
+                  <button
+                    type="button"
+                    className="btn-ghost form__panel-edit-btn"
+                    onClick={openParticipantesModal}
+                  >
+                    Gerir participantes
+                  </button>
+                </div>
+                <p
+                  className={`form__panel-summary form__panel-summary--sub${fieldHighlight.participantes ? ' form__panel-summary--error' : ''}`}
+                  aria-live="polite"
+                >
+                  {participantesResumoLabel(form.participantes)}
+                </p>
+              </div>
+            </div>
             <div className="form__actions">
               <button type="submit" className="btn" disabled={carLoading}>
                 {carLoading ? 'A guardar…' : 'Reservar carro'}
               </button>
             </div>
           </form>
+          <ReservaFormTextModal
+            open={participantesModalOpen}
+            title="Adicionar participantes"
+            titleId="carro-modal-add-participantes-title"
+            error={participantesModalError}
+            onConfirm={confirmParticipantesModal}
+            onCancel={cancelParticipantesModal}
+          >
+            <div className="app__modal-field">
+              <label htmlFor="carro-modal-participantes-field">
+                E-mails (várias linhas ou separados por vírgula)
+              </label>
+              <M365ParticipantesAutocomplete
+                id="carro-modal-participantes-field"
+                className="form__textarea form__textarea--participantes-compact form__textarea--modal-body"
+                placeholder="Um por linha ou separados por vírgula"
+                value={participantesDraft}
+                onValueChange={setParticipantesDraft}
+              />
+            </div>
+          </ReservaFormTextModal>
         </section>
       </div>
     </div>

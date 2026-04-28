@@ -204,6 +204,7 @@ function buildCarFields(body) {
     Motorista: String(body.motorista ?? 'Charles Bueno').trim(),
     Status: 'ativo',
   }
+  if (body.participantes != null) fields.EmailsParticipantes = String(body.participantes).trim()
   if (body.id != null) fields.ReservaID = String(body.id).trim()
   if (!body._patch) fields.CriadoVia = 'App Web'
   const unidade = String(body.unidade ?? '')
