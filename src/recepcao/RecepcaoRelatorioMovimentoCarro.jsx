@@ -297,22 +297,35 @@ export default function RecepcaoRelatorioMovimentoCarro({ embedded = false }) {
                   </tr>
                 ) : (
                   tableRows.map((r) => (
-                    <tr key={r.id}>
-                      <td>{r.date}</td>
-                      <td>{r.horaInicio}</td>
-                      <td>{r.horaFim}</td>
-                      <td className="report-table__sala">{r.destino || '—'}</td>
-                      <td>{r.motivo || '—'}</td>
-                      <td>{r.veiculo || '—'}</td>
-                      <td>{r.motorista || '—'}</td>
-                      <td>{r.solicitante}</td>
-                      <td className="report-table__email">{r.emailSolicitante || '—'}</td>
-                      <td className="report-table__obs">
-                        {r.observacoes ? r.observacoes.replace(/\r?\n/g, ' ') : '—'}
-                      </td>
-                      <td>{r.unidade || '—'}</td>
-                      <td>{rowStatusLabel(r)}</td>
-                    </tr>
+                    (() => {
+                      const destino = r.destino || '—'
+                      const email = r.emailSolicitante || '—'
+                      const observacoes = r.observacoes
+                        ? r.observacoes.replace(/\r?\n/g, ' ').trim()
+                        : '—'
+                      return (
+                        <tr key={r.id}>
+                          <td>{r.date}</td>
+                          <td>{r.horaInicio}</td>
+                          <td>{r.horaFim}</td>
+                          <td className="report-table__destino" title={destino}>
+                            {destino}
+                          </td>
+                          <td>{r.motivo || '—'}</td>
+                          <td>{r.veiculo || '—'}</td>
+                          <td>{r.motorista || '—'}</td>
+                          <td>{r.solicitante}</td>
+                          <td className="report-table__email" title={email}>
+                            {email}
+                          </td>
+                          <td className="report-table__obs" title={observacoes}>
+                            {observacoes}
+                          </td>
+                          <td>{r.unidade || '—'}</td>
+                          <td>{rowStatusLabel(r)}</td>
+                        </tr>
+                      )
+                    })()
                   ))
                 )}
               </tbody>
