@@ -25,6 +25,7 @@ import {
 import { canAlterReservation, PERMISSAO_NEGADA_MSG } from './envConfig.js'
 import { useReservas } from './ReservasContext.jsx'
 import CancelarReservaModal from './components/CancelarReservaModal.jsx'
+import FlatDetailsModal from './components/FlatDetailsModal.jsx'
 import UnidadeSelector from './components/UnidadeSelector.jsx'
 import './App.css'
 
@@ -79,6 +80,7 @@ export default function MapaSemanal() {
   const [salasMarcadas, setSalasMarcadas] = useState(() => new Set(SALAS_RECEPCAO_BRASILIA))
   const [cellModal, setCellModal] = useState(null)
   const [cancelTarget, setCancelTarget] = useState(null)
+  const [flatDetailsOpen, setFlatDetailsOpen] = useState(false)
 
   const salasCatalog = useMemo(() => {
     if (mapaUnidade === APP_UNIDADE.CARRO) return MAPA_SEMANAL_CAR_ROW_KEYS
@@ -138,6 +140,10 @@ export default function MapaSemanal() {
   function qtdLabel(salaKey) {
     if (salaKey === CARRO_CONFLICT_SALA_KEY) return '—'
     return capacidadeQtdPessoasExibicao(salaKey, capUnidadeSalas)
+  }
+
+  function isFlatSala(salaKey) {
+    return String(salaNomeGradeExibicao(salaKey)).trim().toLowerCase() === 'flat'
   }
 
   function prevWeek() {
@@ -316,6 +322,15 @@ export default function MapaSemanal() {
                   ) : (
                     <span className="mapa-semanal__row-sala-inner">
                       <span className="mapa-semanal__row-sala-name">{salaNomeGradeExibicao(sala)}</span>
+                      {isFlatSala(sala) ? (
+                        <button
+                          type="button"
+                          className="btn-ghost mapa-semanal__flat-details-btn no-print"
+                          onClick={() => setFlatDetailsOpen(true)}
+                        >
+                          Ver detalhes
+                        </button>
+                      ) : null}
                       <span
                         className="mapa-semanal__row-sala-qtd"
                         title={`Capacidade: ${qtdLabel(sala)}`}
@@ -449,6 +464,7 @@ export default function MapaSemanal() {
           />
         </div>
       ) : null}
+      {flatDetailsOpen ? <FlatDetailsModal onClose={() => setFlatDetailsOpen(false)} /> : null}
     </div>
   )
 }
