@@ -678,10 +678,10 @@ export default function App() {
                             <button
                               type="button"
                               className="availability-grid__flat-details-link"
-                              aria-label="Ver detalhes do Flat"
+                              aria-label="Saber mais sobre o Flat"
                               onClick={() => setFlatDetailsOpen(true)}
                             >
-                              detalhes
+                              saber mais
                             </button>
                           ) : null}
                         </span>
