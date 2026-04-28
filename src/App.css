@@ -1074,6 +1074,20 @@
   text-overflow: ellipsis;
 }
 
+.availability-grid__sala-cell-stack {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.availability-grid__flat-details-btn {
+  margin: 0;
+  padding: 1px 6px;
+  font-size: 0.62rem;
+  line-height: 1.2;
+}
+
 .availability-grid thead .availability-grid__head-salas.room-head {
   text-align: center;
   vertical-align: middle;

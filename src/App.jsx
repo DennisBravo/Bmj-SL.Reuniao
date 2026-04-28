@@ -31,6 +31,7 @@ import { useReservas } from './ReservasContext.jsx'
 import BmjLogo from './components/BmjLogo.jsx'
 import ReservaSlotDetalheModal from './components/ReservaSlotDetalheModal.jsx'
 import CancelarReservaModal from './components/CancelarReservaModal.jsx'
+import FlatDetailsModal from './components/FlatDetailsModal.jsx'
 import { M365EmailAutocomplete, M365ParticipantesAutocomplete } from './components/M365UserAutocompleteFields.jsx'
 import ReservaFormTextModal from './components/ReservaFormTextModal.jsx'
 import UnidadeSelector from './components/UnidadeSelector.jsx'
@@ -96,6 +97,7 @@ export default function App() {
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [detalheReserva, setDetalheReserva] = useState(null)
   const [cancelSlotTarget, setCancelSlotTarget] = useState(null)
+  const [flatDetailsOpen, setFlatDetailsOpen] = useState(false)
   const [identityEmails, setIdentityEmails] = useState(() => getCurrentUserEmailAliasesFromEnv())
   const [slotHoverPreview, setSlotHoverPreview] = useState(null)
   const hoverHideTimerRef = useRef(null)
@@ -172,6 +174,12 @@ export default function App() {
     }
     return map
   }, [salasNomes, appUnidade])
+
+  const isFlatUnit = appUnidade === APP_UNIDADE.SAO_PAULO
+  const isFlatSala = useCallback(
+    (sala) => isFlatUnit && String(salaNomeGradeExibicao(sala)).trim().toLowerCase() === 'flat',
+    [isFlatUnit],
+  )
 
   useEffect(() => {
     if (appUnidade === APP_UNIDADE.CARRO) {
@@ -664,7 +672,18 @@ export default function App() {
                   {salasNomes.map((sala) => (
                     <tr key={sala}>
                       <th className="room-head availability-grid__sala-cell" scope="row" title={sala}>
-                        {salaNomeGradeExibicao(sala)}
+                        <span className="availability-grid__sala-cell-stack">
+                          <span>{salaNomeGradeExibicao(sala)}</span>
+                          {isFlatSala(sala) ? (
+                            <button
+                              type="button"
+                              className="btn-ghost availability-grid__flat-details-btn"
+                              onClick={() => setFlatDetailsOpen(true)}
+                            >
+                              Ver detalhes
+                            </button>
+                          ) : null}
+                        </span>
                       </th>
                       <td
                         className="availability-grid__qtd-cell"
@@ -991,6 +1010,7 @@ export default function App() {
           onConfirm={(payload) => cancelReservationWithAudit(cancelSlotTarget, payload)}
         />
       ) : null}
+      {flatDetailsOpen ? <FlatDetailsModal onClose={() => setFlatDetailsOpen(false)} /> : null}
 
       <ReservaFormTextModal
         open={participantesModalOpen}
