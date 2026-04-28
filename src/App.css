@@ -1076,16 +1076,27 @@
 
 .availability-grid__sala-cell-stack {
   display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
   max-width: 100%;
 }
 
-.availability-grid__flat-details-btn {
+.availability-grid__flat-details-link {
+  appearance: none;
+  border: 0;
+  background: transparent;
   margin: 0;
-  padding: 1px 6px;
+  padding: 0;
   font-size: 0.62rem;
   line-height: 1.2;
+  color: var(--text-muted);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.availability-grid__flat-details-link:hover {
+  color: var(--primary);
 }
 
 .availability-grid thead .availability-grid__head-salas.room-head {

@@ -677,10 +677,11 @@ export default function App() {
                           {isFlatSala(sala) ? (
                             <button
                               type="button"
-                              className="btn-ghost availability-grid__flat-details-btn"
+                              className="availability-grid__flat-details-link"
+                              aria-label="Ver detalhes do Flat"
                               onClick={() => setFlatDetailsOpen(true)}
                             >
-                              Ver detalhes
+                              detalhes
                             </button>
                           ) : null}
                         </span>
