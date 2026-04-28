@@ -372,40 +372,40 @@ export default function ReservaCarroView({ carReservations, addCarReservation, c
                     onValueChange={(v) => updateField('emailSolicitante', v)}
                   />
                 </div>
-                <div className="form__row">
-                  <label htmlFor="car-obs">Observações</label>
-                  <textarea
-                    id="car-obs"
-                    className="form__textarea form__textarea--observacoes"
-                    rows={4}
-                    value={form.observacoes}
-                    onChange={(e) => updateField('observacoes', e.target.value)}
-                    placeholder="Detalhes adicionais (opcional)"
-                  />
+                <div
+                  className={`form__tipo-participantes-cell form__tipo-participantes-cell--part${fieldHighlight.participantes ? ' form__tipo-participantes-cell--error' : ''}`}
+                >
+                  <div className={`form__panel form__panel--stack${fieldHighlight.participantes ? ' form__panel--error' : ''}`}>
+                    <div className="form__panel-head">
+                      <span className="form__panel__legend">Participantes (só e-mails)</span>
+                      <button
+                        type="button"
+                        className="btn-ghost form__panel-edit-btn"
+                        onClick={openParticipantesModal}
+                      >
+                        Gerir participantes
+                      </button>
+                    </div>
+                    <p
+                      className={`form__panel-summary form__panel-summary--sub${fieldHighlight.participantes ? ' form__panel-summary--error' : ''}`}
+                      aria-live="polite"
+                    >
+                      {participantesResumoLabel(form.participantes)}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-            <div
-              className={`form__tipo-participantes-cell form__tipo-participantes-cell--part${fieldHighlight.participantes ? ' form__tipo-participantes-cell--error' : ''}`}
-            >
-              <div className={`form__panel form__panel--stack${fieldHighlight.participantes ? ' form__panel--error' : ''}`}>
-                <div className="form__panel-head">
-                  <span className="form__panel__legend">Participantes (só e-mails)</span>
-                  <button
-                    type="button"
-                    className="btn-ghost form__panel-edit-btn"
-                    onClick={openParticipantesModal}
-                  >
-                    Gerir participantes
-                  </button>
-                </div>
-                <p
-                  className={`form__panel-summary form__panel-summary--sub${fieldHighlight.participantes ? ' form__panel-summary--error' : ''}`}
-                  aria-live="polite"
-                >
-                  {participantesResumoLabel(form.participantes)}
-                </p>
-              </div>
+            <div className="form__row form__row--full">
+              <label htmlFor="car-obs">Observações</label>
+              <textarea
+                id="car-obs"
+                className="form__textarea form__textarea--observacoes"
+                rows={5}
+                value={form.observacoes}
+                onChange={(e) => updateField('observacoes', e.target.value)}
+                placeholder="Detalhes adicionais (opcional)"
+              />
             </div>
             <div className="form__actions">
               <button type="submit" className="btn" disabled={carLoading}>
